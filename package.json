@@ -1,0 +1,23 @@
+{
+    "name": "setuphelm",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Setup helm",
+    "author": "Anumita Shenoy",
+    "license": "MIT",
+    "dependencies": {
+        "@actions/tool-cache": "1.1.2",
+        "@actions/io": "^1.0.0",
+        "@actions/core": "^1.0.0",
+        "@actions/exec": "^1.0.0"
+    },
+    "main": "lib/run.js",
+    "scripts": {
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "devDependencies": {
+        "@types/node": "^12.0.10",
+        "typescript": "^3.5.2"
+    }
+}
