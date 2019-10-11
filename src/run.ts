@@ -1,10 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import * as fs from 'fs';
 
-import * as toolCache from '../node_modules/@actions/tool-cache';
-import * as core from '../node_modules/@actions/core';
+import * as toolCache from '@actions/tool-cache';
+import * as core from '@actions/core';
 
 const helmToolName = 'helm';
 const stableHelmVersion = 'v2.14.1';
