@@ -53,8 +53,7 @@ async function getStableHelmVersion(): Promise<string> {
 
 
 var walkSync = function(dir, filelist, fileToFind) {
-    var fs = fs || require('fs'),
-        files = fs.readdirSync(dir);
+    var files = fs.readdirSync(dir);
     filelist = filelist || [];
     files.forEach(function(file) {
       if (fs.statSync(path.join(dir, file)).isDirectory()) {
@@ -89,7 +88,7 @@ async function downloadHelm(version: string): Promise<string> {
 
     const helmpath = findHelm(cachedToolpath);
     if (!helmpath) {
-        
+        throw new Error(util.format("Helm executable not found in path ", cachedToolpath));
     }
     
     fs.chmodSync(helmpath, '777');
