@@ -113,6 +113,17 @@ async function run() {
     }
 
     let cachedPath = await downloadHelm(version);
+    
+    try {
+        
+        if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
+            core.addPath(path.dirname(cachedPath));
+        }
+    }
+    catch {
+        //do nothing, set as output variable
+    }
+
     console.log(`Helm tool version: '${version}' has been cached at ${cachedPath}`);
     core.setOutput('helm-path', cachedPath);
 }

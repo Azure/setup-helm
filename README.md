@@ -9,6 +9,8 @@ Acceptable values are latest or any semantic version string like 1.15.0. Use thi
     version: '<version>' # default is latest stable
   id: install
 ```
+
+The cached helm binary path is prepended to the PATH environment variable as well as stored in the helm-path output variable.
 Refer to the action metadata file for details about all the inputs https://github.com/Azure/setup-helm/blob/master/action.yml
 
 # Contributing
