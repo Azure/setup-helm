@@ -6,7 +6,7 @@ Acceptable values are latest or any semantic version string like 1.15.0. Use thi
 ```yaml
 - uses: azure/setup-helm@v1
   with:
-    version: '<version>' # default is latest stable
+    version: v'<version>' # default is latest stable
   id: install
 ```
 
