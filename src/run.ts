@@ -11,7 +11,7 @@ import * as core from '@actions/core';
 
 const helmToolName = 'helm';
 const stableHelmVersion = 'v2.14.1';
-const helmLatestReleaseUrl  = 'https://api.github.com/repos/helm/helm/releases/latest';
+const helmLatestReleaseUrl = 'https://api.github.com/repos/helm/helm/releases/latest';
 
 function getExecutableExtension(): string {
     if (os.type().match(/^Win/)) {
@@ -37,11 +37,10 @@ function getHelmDownloadURL(version: string): string {
 async function getStableHelmVersion(): Promise<string> {
     return toolCache.downloadTool(helmLatestReleaseUrl).then((downloadPath) => {
         const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
-        if (!response.tag_name)
-        {
+        if (!response.tag_name) {
             return stableHelmVersion;
         }
-        
+
         return response.tag_name;
     }, (error) => {
         core.debug(error);
@@ -51,24 +50,23 @@ async function getStableHelmVersion(): Promise<string> {
 }
 
 
-var walkSync = function(dir, filelist, fileToFind) {
+var walkSync = function (dir, filelist, fileToFind) {
     var files = fs.readdirSync(dir);
     filelist = filelist || [];
-    files.forEach(function(file) {
-      if (fs.statSync(path.join(dir, file)).isDirectory()) {
-        filelist = walkSync(path.join(dir, file), filelist, fileToFind);
-      }
-      else {
-          core.debug(file);
-          if(file == fileToFind)
-          {
-             filelist.push(path.join(dir, file));
-          }
-      }
+    files.forEach(function (file) {
+        if (fs.statSync(path.join(dir, file)).isDirectory()) {
+            filelist = walkSync(path.join(dir, file), filelist, fileToFind);
+        }
+        else {
+            core.debug(file);
+            if (file == fileToFind) {
+                filelist.push(path.join(dir, file));
+            }
+        }
     });
     return filelist;
-  };
-  
+};
+
 async function downloadHelm(version: string): Promise<string> {
     if (!version) { version = await getStableHelmVersion(); }
     let cachedToolpath = toolCache.find(helmToolName, version);
@@ -89,7 +87,7 @@ async function downloadHelm(version: string): Promise<string> {
     if (!helmpath) {
         throw new Error(util.format("Helm executable not found in path ", cachedToolpath));
     }
-    
+
     fs.chmodSync(helmpath, '777');
     return helmpath;
 }
@@ -110,14 +108,14 @@ async function run() {
     let version = core.getInput('version', { 'required': true });
     if (version.toLocaleLowerCase() === 'latest') {
         version = await getStableHelmVersion();
-    }else if(!version.toLocaleLowerCase().startsWith('v')){
+    } else if (!version.toLocaleLowerCase().startsWith('v')) {
         version = 'v' + version;
     }
 
     let cachedPath = await downloadHelm(version);
-    
+
     try {
-        
+
         if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
             core.addPath(path.dirname(cachedPath));
         }

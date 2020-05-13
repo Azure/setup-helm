@@ -1,12 +1,12 @@
 # Setup Helm
 #### Install a specific version of helm binary on the runner.
 
-Acceptable values are latest or any semantic version string like 1.15.0. Use this action in workflow to define which version of helm will be used.
+Acceptable values are latest or any semantic version string like v2.16.7 Use this action in workflow to define which version of helm will be used.
 
 ```yaml
 - uses: azure/setup-helm@v1
   with:
-    version: v'<version>' # default is latest stable
+    version: '<version>' # default is latest stable
   id: install
 ```
 
