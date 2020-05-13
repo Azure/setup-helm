@@ -9,7 +9,8 @@
         "@actions/tool-cache": "1.1.2",
         "@actions/io": "^1.0.0",
         "@actions/core": "^1.0.0",
-        "@actions/exec": "^1.0.0"
+        "@actions/exec": "^1.0.0",
+        "semver": "^6.1.0"
     },
     "main": "lib/run.js",
     "scripts": {
