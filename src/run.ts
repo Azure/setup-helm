@@ -5,13 +5,14 @@ import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import * as fs from 'fs';
+import * as semver from 'semver';
 
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 
 const helmToolName = 'helm';
-const stableHelmVersion = 'v2.14.1';
-const helmLatestReleaseUrl = 'https://api.github.com/repos/helm/helm/releases/latest';
+const stableHelmVersion = 'v3.2.1';
+const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases';
 
 function getExecutableExtension(): string {
     if (os.type().match(/^Win/)) {
@@ -35,18 +36,28 @@ function getHelmDownloadURL(version: string): string {
 }
 
 async function getStableHelmVersion(): Promise<string> {
-    return toolCache.downloadTool(helmLatestReleaseUrl).then((downloadPath) => {
-        const response = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
-        if (!response.tag_name) {
-            return stableHelmVersion;
-        }
+    try {
+        const downloadPath = await toolCache.downloadTool(helmAllReleasesUrl);
+        const responseArray = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
+        let latestHelmVersion = semver.clean(stableHelmVersion);
+        responseArray.forEach(response => {
+            if (response && response.tag_name) {
+                let currentHelmVerison = semver.clean(response.tag_name.toString());
+                if (currentHelmVerison) {
+                    if (currentHelmVerison.toString().indexOf('rc') == -1 && semver.gt(currentHelmVerison, latestHelmVersion)) {
+                        //If current helm version is not a pre release and is greater than latest helm version
+                        latestHelmVersion = currentHelmVerison;
+                    }
+                }
+            }
+        });
+        latestHelmVersion = "v" + latestHelmVersion;
+        return latestHelmVersion;
+    } catch (error) {
+        core.warning(util.format("Cannot get the latest Helm info from %s. Error %s. Using default Helm version %s.", helmAllReleasesUrl, error, stableHelmVersion));
+    }
 
-        return response.tag_name;
-    }, (error) => {
-        core.debug(error);
-        core.warning(util.format("Failed to read latest kubectl version from stable.txt. From URL %s. Using default stable version %s", helmLatestReleaseUrl, stableHelmVersion));
-        return stableHelmVersion;
-    });
+    return stableHelmVersion;
 }
 
 
