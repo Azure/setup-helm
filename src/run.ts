@@ -120,6 +120,8 @@ async function run() {
     let version = core.getInput('version', { 'required': true });
     if (version.toLocaleLowerCase() === 'latest') {
         version = await getStableHelmVersion();
+    } else if (!version.toLocaleLowerCase().startsWith('v')) {
+        version = 'v' + version;
     }
 
     let cachedPath = await downloadHelm(version);
