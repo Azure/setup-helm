@@ -9,10 +9,13 @@ import * as semver from 'semver';
 
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
+import { graphql } from '@octokit/graphql';
 
 const helmToolName = 'helm';
 const stableHelmVersion = 'v3.2.1';
 const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases';
+const LATEST_HELM2_VERSION = '2.*';
+const LATEST_HELM3_VERSION = '3.*';
 
 function getExecutableExtension(): string {
     if (os.type().match(/^Win/)) {
@@ -103,6 +106,23 @@ async function downloadHelm(version: string): Promise<string> {
     return helmpath;
 }
 
+async function getLatestHelmVersionFor(type) {
+  const versions = await graphql(
+    `
+      repository(name:"helm"
+        owner:"helm") {
+        releases(last: 100)  {
+            nodes {
+              tagName
+            }
+        }
+      }
+    }
+    `
+  );
+  console.log(versions);
+}
+
 function findHelm(rootFolder: string): string {
     fs.chmodSync(rootFolder, '777');
     var filelist: string[] = [];
@@ -121,6 +141,10 @@ async function run() {
         version = await getStableHelmVersion();
     } else if (!version.toLocaleLowerCase().startsWith('v')) {
         version = 'v' + version;
+    } else if (version === LATEST_HELM2_VERSION) {
+        version = 'v' + getLatestHelmVersionFor(2);
+    } else if (version === LATEST_HELM3_VERSION) {
+        version = 'v' + getLatestHelmVersionFor(3);
     }
 
     let cachedPath = await downloadHelm(version);
