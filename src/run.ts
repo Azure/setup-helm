@@ -112,6 +112,7 @@ async function getLatestHelmVersionFor(type) {
   const token =  core.getInput('token', { 'required': true });
   const versions = await graphql(
     `
+    {
       repository(name:"helm", owner:"helm") {
         releases(last: 100)  {
             nodes {
