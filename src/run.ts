@@ -105,11 +105,12 @@ async function getLatestHelmVersionFor(type) {
   } catch (err) {
     core.warning(util.format("Error while fetching the latest Helm %s release. Error: %s. Using defaul Helm version %s.", type, err.toString(), stableHelmVersion));
   }
+  core.warning(util.format("Could not find stable release for Helm %s. Using defaul Helm version %s.", type, stableHelmVersion));
   return stableHelmVersion;
 }
 
 // isValidVersion checks if verison matches the specified type and is a stable release
-function isValidVersion(version, type) {
+function isValidVersion(version, type): boolean {
   if (!version.startsWith(type))
     return false;
   return version.indexOf('rc') == -1
@@ -137,7 +138,7 @@ async function run() {
     version = 'v' + version;
   }
 
-  core.debug(util.format("Downloading %s",version));
+  core.debug(util.format("Downloading %s", version));
   let cachedPath = await downloadHelm(version);
 
   try {
