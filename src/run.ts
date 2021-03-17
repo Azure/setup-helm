@@ -124,7 +124,7 @@ async function getLatestHelmVersionFor(type) {
     `,
     {
       headers: {
-        authorization: token
+        authorization: `token ${token}`
       }
     }
   );
@@ -149,9 +149,11 @@ async function run() {
   if (version.toLocaleLowerCase() === 'latest') {
     version = await getStableHelmVersion();
   } else if (version === LATEST_HELM2_VERSION) {
-    version = 'v' + getLatestHelmVersionFor(2);
+    const v = await getLatestHelmVersionFor(2);
+    version = 'v' + v;
   } else if (version === LATEST_HELM3_VERSION) {
-    version = 'v' + getLatestHelmVersionFor(3);
+    const v = await getLatestHelmVersionFor(3);
+    version = 'v' + v;
   } else if (!version.toLocaleLowerCase().startsWith('v')) {
     version = 'v' + version;
   }
