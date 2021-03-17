@@ -110,7 +110,7 @@ async function getLatestHelmVersionFor(type) {
   console.log("Running graphql")
   console.log(type)
   const token =  core.getInput('token', { 'required': true });
-  const versions = await graphql(
+  const { repository } = await graphql(
     `
     {
       repository(name:"helm", owner:"helm") {
@@ -128,7 +128,7 @@ async function getLatestHelmVersionFor(type) {
       }
     }
   );
-  console.log(versions);
+  console.log(repository.releases.nodes);
   return stableHelmVersion;
 }
 
@@ -153,7 +153,7 @@ async function run() {
     version = 'v' + v;
   } else if (version === LATEST_HELM3_VERSION) {
     const v = await getLatestHelmVersionFor(3);
-    version = 'v' + v;
+    version = v;
   } else if (!version.toLocaleLowerCase().startsWith('v')) {
     version = 'v' + version;
   }
