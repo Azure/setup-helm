@@ -14,14 +14,14 @@ const helmToolName = 'helm';
 const stableHelmVersion = 'v3.2.1';
 const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases';
 
-function getExecutableExtension(): string {
+export function getExecutableExtension(): string {
     if (os.type().match(/^Win/)) {
         return '.exe';
     }
     return '';
 }
 
-function getHelmDownloadURL(version: string): string {
+export function getHelmDownloadURL(version: string): string {
     switch (os.type()) {
         case 'Linux':
             return util.format('https://get.helm.sh/helm-%s-linux-amd64.zip', version);
@@ -36,7 +36,7 @@ function getHelmDownloadURL(version: string): string {
     }
 }
 
-async function getStableHelmVersion(): Promise<string> {
+export async function getStableHelmVersion(): Promise<string> {
     try {
         const downloadPath = await toolCache.downloadTool(helmAllReleasesUrl);
         const responseArray = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
@@ -62,7 +62,7 @@ async function getStableHelmVersion(): Promise<string> {
 }
 
 
-var walkSync = function (dir, filelist, fileToFind) {
+export var walkSync = function (dir, filelist, fileToFind) {
     var files = fs.readdirSync(dir);
     filelist = filelist || [];
     files.forEach(function (file) {
@@ -79,7 +79,7 @@ var walkSync = function (dir, filelist, fileToFind) {
     return filelist;
 };
 
-async function downloadHelm(version: string): Promise<string> {
+export async function downloadHelm(version: string): Promise<string> {
     if (!version) { version = await getStableHelmVersion(); }
     let cachedToolpath = toolCache.find(helmToolName, version);
     if (!cachedToolpath) {
@@ -87,7 +87,7 @@ async function downloadHelm(version: string): Promise<string> {
         try {
             helmDownloadPath = await toolCache.downloadTool(getHelmDownloadURL(version));
         } catch (exception) {
-            throw new Error(util.format("Failed to download Helm from location ", getHelmDownloadURL(version)));
+            throw new Error(util.format("Failed to download Helm from location", getHelmDownloadURL(version)));
         }
 
         fs.chmodSync(helmDownloadPath, '777');
@@ -97,26 +97,26 @@ async function downloadHelm(version: string): Promise<string> {
 
     const helmpath = findHelm(cachedToolpath);
     if (!helmpath) {
-        throw new Error(util.format("Helm executable not found in path ", cachedToolpath));
+        throw new Error(util.format("Helm executable not found in path", cachedToolpath));
     }
 
     fs.chmodSync(helmpath, '777');
     return helmpath;
 }
 
-function findHelm(rootFolder: string): string {
+export function findHelm(rootFolder: string): string {
     fs.chmodSync(rootFolder, '777');
     var filelist: string[] = [];
     walkSync(rootFolder, filelist, helmToolName + getExecutableExtension());
-    if (!filelist) {
-        throw new Error(util.format("Helm executable not found in path ", rootFolder));
+    if (!filelist || filelist.length == 0) {
+        throw new Error(util.format("Helm executable not found in path", rootFolder));
     }
     else {
         return filelist[0];
     }
 }
 
-async function run() {
+export async function run() {
     let version = core.getInput('version', { 'required': true });
     if (version.toLocaleLowerCase() === 'latest') {
         version = await getStableHelmVersion();
