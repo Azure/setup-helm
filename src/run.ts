@@ -137,6 +137,7 @@ async function run() {
     version = 'v' + version;
   }
 
+  core.debug(util.format("Downloading %s",version));
   let cachedPath = await downloadHelm(version);
 
   try {
