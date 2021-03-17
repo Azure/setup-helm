@@ -97,22 +97,25 @@ async function getLatestHelmVersionFor(type) {
         }
       }
     );
+    
     const releases = repository.releases.nodes.reverse();
-    releases.forEach(release => {
-      if (isValidVersion(release.tagName, type))
-        return release.tagName;
-    });
+    core.debug(releases);
+    let latestValidRelease = releases.find(release => isValidVersion(release.tagName, type));
+    if(latestValidRelease)
+      return latestValidRelease.tagName;
   } catch (err) {
-    core.warning(util.format("Error while fetching the latest Helm %s release. Error: %s. Using defaul Helm version %s.", type, err.toString(), stableHelmVersion));
+    core.warning(util.format("Error while fetching the latest Helm %s release. Error: %s. Using default Helm version %s.", type, err.toString(), stableHelmVersion));
   }
-  core.warning(util.format("Could not find stable release for Helm %s. Using defaul Helm version %s.", type, stableHelmVersion));
+  core.warning(util.format("Could not find stable release for Helm %s. Using default Helm version %s.", type, stableHelmVersion));
   return stableHelmVersion;
 }
 
 // isValidVersion checks if verison matches the specified type and is a stable release
 function isValidVersion(version, type): boolean {
-  if (!version.startsWith(type))
+  console.log(version.toLocaleLowerCase().startsWith(type))
+  if (!version.toLocaleLowerCase().startsWith(type))
     return false;
+  core.debug("version: "+version+" type: "+type);
   return version.indexOf('rc') == -1
 }
 
