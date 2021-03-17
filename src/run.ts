@@ -107,6 +107,8 @@ async function downloadHelm(version: string): Promise<string> {
 }
 
 async function getLatestHelmVersionFor(type) {
+  console.log("Running graphql")
+  console.log(type)
   const versions = await graphql(
     `
       repository(name:"helm"
