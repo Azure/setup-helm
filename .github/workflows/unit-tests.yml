@@ -14,7 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - run: |
+    
+    - name: Build and run L0 tests.
+      run: |
         npm install
-        npm build
+        npm run build
         npm test
