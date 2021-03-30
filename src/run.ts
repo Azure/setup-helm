@@ -20,14 +20,14 @@ const LATEST_HELM2_VERSION = '2.*';
 const LATEST_HELM3_VERSION = '3.*';
 const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases';
 
-function getExecutableExtension(): string {
+export function getExecutableExtension(): string {
     if (os.type().match(/^Win/)) {
         return '.exe';
     }
     return '';
 }
 
-function getHelmDownloadURL(version: string): string {
+export function getHelmDownloadURL(version: string): string {
     switch (os.type()) {
         case 'Linux':
             return util.format('https://get.helm.sh/helm-%s-linux-amd64.zip', version);
@@ -66,7 +66,7 @@ export async function getStableHelmVersion(): Promise<string> {
     return stableHelmVersion;
 }
 
-var walkSync = function (dir, filelist, fileToFind) {
+export var walkSync = function (dir, filelist, fileToFind) {
     var files = fs.readdirSync(dir);
     filelist = filelist || [];
     files.forEach(function (file) {
@@ -83,8 +83,8 @@ var walkSync = function (dir, filelist, fileToFind) {
     return filelist;
 };
 
-async function downloadHelm(version: string): Promise<string> {
-    if (!version) { version = await getLatestHelmVersionFor("v3"); }
+export async function downloadHelm(version: string): Promise<string> {
+    if (!version) { version = await getStableHelmVersion(); }
     let cachedToolpath = toolCache.find(helmToolName, version);
     if (!cachedToolpath) {
         let helmDownloadPath;
@@ -151,19 +151,19 @@ function isValidVersion(version: string, type: string): boolean {
     return version.indexOf('rc') == -1;
 }
 
-function findHelm(rootFolder: string): string {
+export function findHelm(rootFolder: string): string {
     fs.chmodSync(rootFolder, '777');
     var filelist: string[] = [];
     walkSync(rootFolder, filelist, helmToolName + getExecutableExtension());
-    if (!filelist) {
-        throw new Error(util.format("Helm executable not found in path ", rootFolder));
+    if (!filelist || filelist.length == 0) {
+        throw new Error(util.format("Helm executable not found in path", rootFolder));
     }
     else {
         return filelist[0];
     }
 }
 
-async function run() {
+export async function run() {
     let version = core.getInput('version', { 'required': true });
 
     if (process.env['HELM_INSTALLER_LEGACY_VERSIONING'] == 'true') {
