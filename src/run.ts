@@ -113,14 +113,14 @@ async function getLatestHelmVersionFor(type: string): Promise<string> {
     try {
         const { repository } = await graphql(
             `{
-      repository(name:"helm", owner:"helm") {
-        releases(last: 100)  {
-            nodes {
-              tagName
-            }
-        }
-      }
-    }`,
+                repository(name: "helm", owner: "helm") {
+                    releases(last: 100)  {
+                        nodes {
+                            tagName
+                        }
+                    }
+                }
+            }`,
             {
                 headers: {
                     authorization: `token ${token}`
@@ -166,17 +166,17 @@ function findHelm(rootFolder: string): string {
 async function run() {
     let version = core.getInput('version', { 'required': true });
 
-    if (process.env['NEW_VERSION_LOGIC'] == 'true') {
-        if (version.toLocaleLowerCase() === 'latest' || version === LATEST_HELM3_VERSION) {
-            version = await getLatestHelmVersionFor("v3");
-        } else if (version === LATEST_HELM2_VERSION) {
-            version = await getLatestHelmVersionFor("v2");
+    if (process.env['HELM_INSTALLER_LEGACY_VERSIONING'] == 'true') {
+        if (version.toLocaleLowerCase() === 'latest') {
+            version = await getStableHelmVersion();
         } else if (!version.toLocaleLowerCase().startsWith('v')) {
             version = 'v' + version;
         }
     } else {
-        if (version.toLocaleLowerCase() === 'latest') {
-            version = await getStableHelmVersion();
+        if (version.toLocaleLowerCase() === 'latest' || version === LATEST_HELM3_VERSION) {
+            version = await getLatestHelmVersionFor("v3");
+        } else if (version === LATEST_HELM2_VERSION) {
+            version = await getLatestHelmVersionFor("v2");
         } else if (!version.toLocaleLowerCase().startsWith('v')) {
             version = 'v' + version;
         }
