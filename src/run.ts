@@ -12,6 +12,8 @@ import { graphql } from '@octokit/graphql';
 
 const helmToolName = 'helm';
 const stableHelmVersion = 'v3.2.1';
+const stableHelm3Version = 'v3.5.3';
+const stableHelm2Version = 'v2.17.0';
 const LATEST_HELM2_VERSION = '2.*';
 const LATEST_HELM3_VERSION = '3.*';
 
@@ -78,11 +80,11 @@ async function downloadHelm(version: string): Promise<string> {
   return helmpath;
 }
 
-async function getLatestHelmVersionFor(type) {
-  const token = core.getInput('token', { 'required': true });
-  try {
-    const { repository } = await graphql(
-      `{
+async function getLatestHelmVersionFor(type: string): Promise<string> {
+    const token = core.getInput('token', { 'required': true });
+    try {
+        const { repository } = await graphql(
+            `{
       repository(name:"helm", owner:"helm") {
         releases(last: 100)  {
             nodes {
@@ -91,29 +93,34 @@ async function getLatestHelmVersionFor(type) {
         }
       }
     }`,
-      {
-        headers: {
-          authorization: `token ${token}`
-        }
-      }
-    );
-    
-    const releases = repository.releases.nodes.reverse();
-    let latestValidRelease = releases.find(release => isValidVersion(release.tagName, type));
-    if(latestValidRelease)
-      return latestValidRelease.tagName;
-  } catch (err) {
-    core.warning(util.format("Error while fetching the latest Helm %s release. Error: %s. Using default Helm version %s.", type, err.toString(), stableHelmVersion));
-  }
-  core.warning(util.format("Could not find stable release for Helm %s. Using default Helm version %s.", type, stableHelmVersion));
-  return stableHelmVersion;
+            {
+                headers: {
+                    authorization: `token ${token}`
+                }
+            }
+        );
+
+        const releases = repository.releases.nodes.reverse();
+        let latestValidRelease = releases.find(release => isValidVersion(release.tagName, type));
+        if (latestValidRelease)
+            return latestValidRelease.tagName;
+    } catch (err) {
+        core.warning(util.format("Error while fetching the latest Helm %s release. Error: %s. Using default Helm version %s.", type, err.toString(), getStableHelmVersionFor(type)));
+        return getStableHelmVersionFor(type);
+    }
+    core.warning(util.format("Could not find stable release for Helm %s. Using default Helm version %s.", type, getStableHelmVersionFor(type)));
+    return getStableHelmVersionFor(type);
+}
+
+function getStableHelmVersionFor(type: string) {
+    return type==="v2" ? stableHelm2Version : stableHelm3Version;
 }
 
 // isValidVersion checks if verison matches the specified type and is a stable release
-function isValidVersion(version, type): boolean {
-  if (!version.toLocaleLowerCase().startsWith(type))
-    return false;
-  return version.indexOf('rc') == -1
+function isValidVersion(version: string, type: string): boolean {
+    if (!version.toLocaleLowerCase().startsWith(type))
+        return false;
+    return version.indexOf('rc') == -1
 }
 
 function findHelm(rootFolder: string): string {
