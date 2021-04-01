@@ -15,7 +15,7 @@
     },
     "main": "lib/run.js",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc --outDir ./lib --rootDir ./src",
         "test": "jest",
         "test-coverage": "jest --coverage"
     },
