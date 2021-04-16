@@ -1,4 +1,4 @@
-# Setup Helm
+# Setup Helm 
 #### Install a specific version of helm binary on the runner.
 
 Acceptable values are latest or any semantic version string like v2.16.7 Use this action in workflow to define which version of helm will be used.
