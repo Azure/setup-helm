@@ -15,15 +15,11 @@
     },
     "main": "lib/run.js",
     "scripts": {
-        "build": "tsc --outDir ./lib --rootDir ./src",
-        "test": "jest",
-        "test-coverage": "jest --coverage"
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "devDependencies": {
         "@types/node": "^12.0.10",
-        "typescript": "^3.5.2",
-        "jest": "^26.0.1",
-        "@types/jest": "^25.2.2",
-        "ts-jest": "^25.5.1"
+        "typescript": "^3.9.9"
     }
 }
