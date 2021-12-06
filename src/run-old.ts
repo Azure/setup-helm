@@ -50,7 +50,7 @@ export async function getStableHelmVersion(): Promise<string> {
             if (response && response.tag_name) {
                 let currentHelmVerison = semver.clean(response.tag_name.toString());
                 if (currentHelmVerison) {
-                    if (currentHelmVerison.toString().indexOf('rc') === -1 && semver.gt(currentHelmVerison, latestHelmVersion)) {
+                    if (currentHelmVerison.toString().indexOf('rc') == -1 && semver.gt(currentHelmVerison, latestHelmVersion)) {
                         //If current helm version is not a pre release and is greater than latest helm version
                         latestHelmVersion = currentHelmVerison;
                     }
@@ -75,9 +75,8 @@ export var walkSync = function (dir, filelist, fileToFind) {
         }
         else {
             core.debug(file);
-            if (file === fileToFind) {
+            if (file == fileToFind) {
                 filelist.push(path.join(dir, file));
-                return filelist;
             }
         }
     });
@@ -186,10 +185,15 @@ export async function run() {
     core.debug(util.format("Downloading %s", version));
     let cachedPath = await downloadHelm(version);
 
-    if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
-        core.addPath(path.dirname(cachedPath));
-    }
+    try {
 
+        if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
+            core.addPath(path.dirname(cachedPath));
+        }
+    }
+    catch {
+        //do nothing, set as output variable
+    }
 
     console.log(`Helm tool version: '${version}' has been cached at ${cachedPath}`);
     core.setOutput('helm-path', cachedPath);
