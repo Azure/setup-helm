@@ -14,7 +14,7 @@ import { graphql } from '@octokit/graphql';
 
 const helmToolName = 'helm';
 const stableHelmVersion = 'v3.2.1';
-const stableHelm3Version = 'v3.5.3';
+const stableHelm3Version = 'v3.7.2';
 const stableHelm2Version = 'v2.17.0';
 const LATEST_HELM2_VERSION = '2.*';
 const LATEST_HELM3_VERSION = '3.*';
@@ -30,10 +30,26 @@ export function getExecutableExtension(): string {
 export function getHelmDownloadURL(version: string): string {
     switch (os.type()) {
         case 'Linux':
+            if (os.arch() === 'x64') {
+                return util.format('https://get.helm.sh/helm-%s-linux-amd64.tar.gz', version);
+            }
+            else if(os.arch() === 'arm') {
+                return util.format('https://get.helm.sh/helm-%s-linux-arm.tar.gz', version);
+            }
+            else if(os.arch() === 'arm64') {
+                return util.format('https://get.helm.sh/helm-%s-linux-arm64.tar.gz', version);
+            }
             return util.format('https://get.helm.sh/helm-%s-linux-amd64.zip', version);
 
         case 'Darwin':
-            return util.format('https://get.helm.sh/helm-%s-darwin-amd64.zip', version);
+            if(os.arch() === 'x64') {
+                return util.format('https://get.helm.sh/helm-%s-darwin-amd64.zip', version);
+            }
+            else if(os.arch() === 'arm64') {
+                return util.format('https://get.helm.sh/helm-%s-darwin-arm64.zip', version);
+
+            }
+            return util.format('https://get.helm.sh/helm-%s-darwin-amd64.tar.gz', version);
 
         case 'Windows_NT':
         default:
