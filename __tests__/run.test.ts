@@ -68,9 +68,9 @@ describe('run.ts', () => {
         jest.spyOn(toolCache, 'downloadTool').mockRejectedValue('Unable to download');
         jest.spyOn(core, 'warning').mockImplementation();
 
-        expect(await run.getStableHelmVersion()).toBe('v3.2.1');
+        expect(await run.getStableHelmVersion()).toBe('v3.7.2');
         expect(toolCache.downloadTool).toBeCalled();
-        expect(core.warning).toBeCalledWith("Cannot get the latest Helm info from https://api.github.com/repos/helm/helm/releases. Error Unable to download. Using default Helm version v3.2.1.");
+        expect(core.warning).toBeCalledWith("Cannot get the latest Helm info from https://api.github.com/repos/helm/helm/releases. Error Unable to download. Using default Helm version v3.7.2.");
     });
 
     test('walkSync() - return path to the all files matching fileToFind in dir', () => {
