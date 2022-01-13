@@ -8,6 +8,7 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as semver from 'semver';
 
+import * as exec from '@actions/exec';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 import { graphql } from '@octokit/graphql';
@@ -108,6 +109,9 @@ export async function downloadHelm(version: string): Promise<string> {
     return helmpath;
 }
 
+async function getLatestHelmVersionForTest(type: string): Promise<string>{
+    exec.exec(`curl -Ls https://api.github.com/repos/helm/helm/releases | grep 'v3.[0-9]*.[0-9]*' | sed -E 's/ .*\/helm\/helm\/releases\/tag\/tag\/(v[0-9\.]+)".*/\1/g' | head -1 | sed -E 's/.*tag\///' | sed -E 's/".*//'`)
+}
 async function getLatestHelmVersionFor(type: string): Promise<string> {
     const token = core.getInput('token', { 'required': true });
     try {
