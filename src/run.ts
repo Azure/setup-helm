@@ -106,8 +106,9 @@ export async function downloadHelm(version: string): Promise<string> {
 }
 
 // getLatestHelmVersion uses cURL and regex to scrape the latest version 
-async function getLatestHelmVersion(): Promise<string>{
-    const command:string = `curl -Ls ${helmAllReleasesUrl} | grep 'v3.[0-9]*.[0-9]*' | sed -E 's/ .*\/helm\/helm\/releases\/tag\/tag\/(v[0-9\.]+)".*/\\1/g' | head -1 | sed -E 's/.*tag\///' | sed -E 's/".*//'`;
+export async function getLatestHelmVersion(): Promise<string>{
+    console.log("Test");
+    const command:string = `curl -Ls https://api.github.com/repos/helm/helm/releases | grep 'v3.[0-9]*.[0-9]*' | sed -E 's/ .*\/helm\/helm\/releases\/tag\/tag\/(v[0-9\.]+)".*/\\1/g' | head -1 | sed -E 's/.*tag\///' | sed -E 's/".*//'`;
     let latestHelm: string = "";
     let latestHelmErr: string = "";
     
@@ -123,8 +124,8 @@ async function getLatestHelmVersion(): Promise<string>{
     };
     
     await exec.exec(command, [], options);
-
-    if(latestHelmErr !== "" || isValidVersion(latestHelm)) return getStableHelmVersion();
+    console.log("latestHelm")
+    if(latestHelmErr !== "" || !isValidVersion(latestHelm)) return getStableHelmVersion();
     return latestHelm;
 }
 
