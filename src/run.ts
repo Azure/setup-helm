@@ -36,31 +36,6 @@ export function getHelmDownloadURL(version: string): string {
     }
 }
 
-export async function getStableHelmVersion(): Promise<string> {
-    try {
-        const downloadPath = await toolCache.downloadTool(helmAllReleasesUrl);
-        const responseArray = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
-        let latestHelmVersion = semver.clean(stableHelmVersion);
-        responseArray.forEach(response => {
-            if (response && response.tag_name) {
-                let currentHelmVerison = semver.clean(response.tag_name.toString());
-                if (currentHelmVerison) {
-                    if (currentHelmVerison.toString().indexOf('rc') == -1 && semver.gt(currentHelmVerison, latestHelmVersion)) {
-                        //If current helm version is not a pre release and is greater than latest helm version
-                        latestHelmVersion = currentHelmVerison;
-                    }
-                }
-            }
-        });
-        latestHelmVersion = "v" + latestHelmVersion;
-        return latestHelmVersion;
-    } catch (error) {
-        core.warning(util.format("Cannot get the latest Helm info from %s. Error %s. Using default Helm version %s.", helmAllReleasesUrl, error, stableHelmVersion));
-    }
-
-    return stableHelmVersion;
-}
-
 export var walkSync = function (dir, filelist, fileToFind) {
     var files = fs.readdirSync(dir);
     filelist = filelist || [];
@@ -79,7 +54,7 @@ export var walkSync = function (dir, filelist, fileToFind) {
 };
 
 export async function downloadHelm(version: string): Promise<string> {
-    if (!version) { version = await getStableHelmVersion(); }
+    if (!version) { version = await getLatestHelmVersion(); }
     let cachedToolpath = toolCache.find(helmToolName, version);
     if (!cachedToolpath) {
         let helmDownloadPath;
@@ -103,22 +78,24 @@ export async function downloadHelm(version: string): Promise<string> {
     return helmpath;
 }
 
+// Downloads the helm release JSON and parses all the recent versions of helm from it. 
+// Defaults to sending stable helm version if none are valid.
+
 export async function getLatestHelmVersion(): Promise<string> {
-    let helmJSONPath:string = await toolCache.downloadTool("https://api.github.com/repos/helm/helm/releases");
-    let versions:Array<string>;
-
-    const helmJSONArray:JSON = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
-
-    for(const i in helmJSONArray){
-        versions.push(helmJSONArray[i]["tag_name"]);
+    let helmJSONPath:string = await toolCache.downloadTool(helmAllReleasesUrl);
+    
+    try{
+        const helmJSONArray = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
+        helmJSONArray.forEach(ver => {
+            if(isValidVersion(ver["tag_name"])){
+                return ver;
+            }
+        });
+    } catch(err){
+        core.warning(util.format("Error while fetching the latest Helm release. Error: %s. Using default Helm version %s", err.toString(), stableHelmVersion));
+        return stableHelmVersion;
     }
-
-    for(const v in versions){
-        if(isValidVersion(v)){
-            return v;
-        }
-    }
-
+    
     return stableHelmVersion;
 }
 

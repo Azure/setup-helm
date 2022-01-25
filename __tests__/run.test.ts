@@ -52,35 +52,6 @@ describe('run.ts', () => {
         }
     });
 
-    test('getStableHelmVersion() - download stable version file, read version and return it', async () => {
-        jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool');
-        const response = JSON.stringify(
-            [
-                {
-                    'tag_name': 'v4.0.0'
-                }, {
-                    'tag_name': 'v3.0.0'
-                }, {
-                    'tag_name': 'v2.0.0'
-                }
-            ]
-        );
-        jest.spyOn(fs, 'readFileSync').mockReturnValue(response);
-
-        expect(await run.getStableHelmVersion()).toBe('v4.0.0');
-        expect(toolCache.downloadTool).toBeCalled();
-        expect(fs.readFileSync).toBeCalledWith('pathToTool', 'utf8');
-    });
-
-    test('getStableHelmVersion() - return default version if error occurs while getting latest version', async () => {
-        jest.spyOn(toolCache, 'downloadTool').mockRejectedValue('Unable to download');
-        jest.spyOn(core, 'warning').mockImplementation();
-
-        expect(await run.getStableHelmVersion()).toBe('v3.8.0');
-        expect(toolCache.downloadTool).toBeCalled();
-        expect(core.warning).toBeCalledWith("Cannot get the latest Helm info from https://api.github.com/repos/helm/helm/releases. Error Unable to download. Using default Helm version v3.8.0.");
-    });
-
     test('walkSync() - return path to the all files matching fileToFind in dir', () => {
         jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
             if (file == 'mainFolder') return ['file1' as unknown as fs.Dirent, 'file2' as unknown as fs.Dirent, 'folder1' as unknown as fs.Dirent, 'folder2' as unknown as fs.Dirent];
