@@ -44,6 +44,14 @@ describe('run.ts', () => {
         expect(os.type).toBeCalled();         
     });
 
+    test('getLatestHelmVersion() - return the latest version of HELM', async () => {
+        try{
+            expect(await run.getLatestHelmVersion()).toBe("v3.8.0");
+        } catch (e){
+            return e;
+        }
+    });
+
     test('getStableHelmVersion() - download stable version file, read version and return it', async () => {
         jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool');
         const response = JSON.stringify(
