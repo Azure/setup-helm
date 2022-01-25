@@ -85,12 +85,12 @@ export async function getLatestHelmVersion(): Promise<string> {
     let helmJSONPath:string = await toolCache.downloadTool(helmAllReleasesUrl);
     
     try{
-        const helmJSONArray = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
-        helmJSONArray.forEach(ver => {
-            if(isValidVersion(ver["tag_name"])){
-                return ver;
+        const helmJSON = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
+        for(let i in helmJSON){
+            if(isValidVersion(helmJSON[i].tag_name)){
+                return helmJSON[i].tag_name;
             }
-        });
+        }
     } catch(err){
         core.warning(util.format("Error while fetching the latest Helm release. Error: %s. Using default Helm version %s", err.toString(), stableHelmVersion));
         return stableHelmVersion;
