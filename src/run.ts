@@ -8,13 +8,11 @@ import * as util from 'util';
 import * as fs from 'fs';
 import * as semver from 'semver';
 
-import * as exec from '@actions/exec';
-import { ExecOptions } from '@actions/exec/lib/interfaces';
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
 
 const helmToolName = 'helm';
-const stableHelmVersion = 'v3.7.2';
+const stableHelmVersion = 'v3.8.0';
 const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases';
 
 export function getExecutableExtension(): string {
@@ -105,28 +103,23 @@ export async function downloadHelm(version: string): Promise<string> {
     return helmpath;
 }
 
-// getLatestHelmVersion uses cURL and regex to scrape the latest version 
-export async function getLatestHelmVersion(): Promise<string>{
-    console.log("Test");
-    const command:string = `curl -Ls https://api.github.com/repos/helm/helm/releases | grep 'v3.[0-9]*.[0-9]*' | sed -E 's/ .*\/helm\/helm\/releases\/tag\/tag\/(v[0-9\.]+)".*/\\1/g' | head -1 | sed -E 's/.*tag\///' | sed -E 's/".*//'`;
-    let latestHelm: string = "";
-    let latestHelmErr: string = "";
-    
-    const options:ExecOptions = {};
+export async function getLatestHelmVersion(): Promise<string> {
+    let helmJSONPath:string = await toolCache.downloadTool("https://api.github.com/repos/helm/helm/releases");
+    let versions:Array<string>;
 
-    options.listeners = {
-        stdout: (data: Buffer) => {
-            latestHelm += data.toString();
-        },
-        stderr: (data: Buffer) => {
-            latestHelmErr += data.toString();
+    const helmJSONArray:JSON = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
+
+    for(const i in helmJSONArray){
+        versions.push(helmJSONArray[i]["tag_name"]);
+    }
+
+    for(const v in versions){
+        if(isValidVersion(v)){
+            return v;
         }
-    };
-    
-    await exec.exec(command, [], options);
-    console.log("latestHelm")
-    if(latestHelmErr !== "" || !isValidVersion(latestHelm)) return getStableHelmVersion();
-    return latestHelm;
+    }
+
+    return stableHelmVersion;
 }
 
 // isValidVersion checks if verison matches the specified type and is a stable release

@@ -22,31 +22,31 @@ describe('run.ts', () => {
 
     test('getHelmDownloadURL() - return the URL to download helm for Linux', () => {
         jest.spyOn(os, 'type').mockReturnValue('Linux');
-        const kubectlLinuxUrl = 'https://get.helm.sh/helm-v3.7.2-linux-amd64.zip'
+        const kubectlLinuxUrl = 'https://get.helm.sh/helm-v3.8.0-linux-amd64.zip'
 
-        expect(run.getHelmDownloadURL('v3.7.2')).toBe(kubectlLinuxUrl);
+        expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlLinuxUrl);
         expect(os.type).toBeCalled();         
     });
 
     test('getHelmDownloadURL() - return the URL to download helm for Darwin', () => {
         jest.spyOn(os, 'type').mockReturnValue('Darwin');
-        const kubectlDarwinUrl = 'https://get.helm.sh/helm-v3.7.2-darwin-amd64.zip'
+        const kubectlDarwinUrl = 'https://get.helm.sh/helm-v3.8.0-darwin-amd64.zip'
 
-        expect(run.getHelmDownloadURL('v3.7.2')).toBe(kubectlDarwinUrl);
+        expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlDarwinUrl);
         expect(os.type).toBeCalled();         
     });
 
     test('getHelmDownloadURL() - return the URL to download helm for Windows', () => {
         jest.spyOn(os, 'type').mockReturnValue('Windows_NT');
 
-        const kubectlWindowsUrl = 'https://get.helm.sh/helm-v3.7.2-windows-amd64.zip'
-        expect(run.getHelmDownloadURL('v3.7.2')).toBe(kubectlWindowsUrl);
+        const kubectlWindowsUrl = 'https://get.helm.sh/helm-v3.8.0-windows-amd64.zip'
+        expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlWindowsUrl);
         expect(os.type).toBeCalled();         
     });
 
     test('getLatestHelmVersion() - return the latest version of HELM', async () => {
         try{
-            expect(run.getLatestHelmVersion()).toBe("v3.7.2");
+            expect(run.getLatestHelmVersion()).toBe("v3.8.0");
         } catch (e){
             return e;
         }
@@ -76,9 +76,9 @@ describe('run.ts', () => {
         jest.spyOn(toolCache, 'downloadTool').mockRejectedValue('Unable to download');
         jest.spyOn(core, 'warning').mockImplementation();
 
-        expect(await run.getStableHelmVersion()).toBe('v3.7.2');
+        expect(await run.getStableHelmVersion()).toBe('v3.8.0');
         expect(toolCache.downloadTool).toBeCalled();
-        expect(core.warning).toBeCalledWith("Cannot get the latest Helm info from https://api.github.com/repos/helm/helm/releases. Error Unable to download. Using default Helm version v3.7.2.");
+        expect(core.warning).toBeCalledWith("Cannot get the latest Helm info from https://api.github.com/repos/helm/helm/releases. Error Unable to download. Using default Helm version v3.8.0.");
     });
 
     test('walkSync() - return path to the all files matching fileToFind in dir', () => {
