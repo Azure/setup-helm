@@ -78,8 +78,8 @@ export async function downloadHelm(version: string): Promise<string> {
     return helmpath;
 }
 
-// Downloads the helm release JSON and parses all the recent versions of helm from it. 
-// Defaults to sending stable helm version if none are valid.
+// Downloads the helm releases JSON and parses all the recent versions of helm from it. 
+// Defaults to sending stable helm version if none are valid or if it fails
 
 export async function getLatestHelmVersion(): Promise<string> {
     let helmJSONPath:string = await toolCache.downloadTool(helmAllReleasesUrl);
@@ -99,7 +99,7 @@ export async function getLatestHelmVersion(): Promise<string> {
     return stableHelmVersion;
 }
 
-// isValidVersion checks if verison matches the specified type and is a stable release
+// isValidVersion checks if verison is a stable release
 function isValidVersion(version: string): boolean {
     return version.indexOf('rc') == -1;
 }
