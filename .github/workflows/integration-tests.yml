@@ -27,7 +27,7 @@ jobs:
         - name: Setup kubectl
           uses: ./
           with: 
-            version: env.HELM_3_8_0  
+            version: ${{ env.HELM_3_8_0 }}
         - name: Validate 3.8.0
           run: |
             if [[ $(helm version) != *$HELM_3_8_0* ]]; then
@@ -40,7 +40,7 @@ jobs:
         - name: Setup kubectl 3.7.2
           uses: ./
           with: 
-            version: env.HELM_3_7_2
+            version: ${{ env.HELM_3_7_2 }}
         - name: Validate 3.7.2
           run: |
             if [[ $(helm version) != *$HELM_3_7_2* ]]; then
