@@ -30,7 +30,10 @@ jobs:
             version: 'v3.8.0'   
         - name: Validate 3.8.0
           run: |
-            if [[ $(helm version) != 'v3.8.0' ]]; then
-              echo "HELM VERSION INCORRECT: LOOKING FOR $(HELM_3_8_0) GOT $(helm version)"
+            if [[ $(helm version) != *"v3.8.0"* ]]; then
+              echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.8.0"
+              echo "HELM VERSION OUTPUT: $(helm version)"
               exit 1
+            else
+              echo "HELM VERSION $HELM_3_8_0 INSTALLED SUCCESSFULLY"
             fi
