@@ -13,7 +13,10 @@ jobs:
           uses: actions/checkout@v2
           with:
               path: IntegrationTests
-            
+        - name: Setup kubectl
+          uses: ./
+          with: 
+            version: 'v3.8.0'   
         - name: Trigger Test run
           run:
             helm version
