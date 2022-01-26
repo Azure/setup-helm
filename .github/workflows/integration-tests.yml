@@ -8,13 +8,27 @@ jobs:
     trigger-integration-tests:
       name: Trigger Integration tests
       runs-on: ubuntu-latest
+      env:
+        HELM_3_8_0: 'v3.8.0'
+        HELM_3_7_2: 'v3.7.2'
+        HELM_3_5_0: 'v3.5.0'
+        PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
       steps:
         - name: Check out repository
           uses: actions/checkout@v2
+        - name: npm install and build
+          id: action-npm-build
+          run: |
+            echo $PR_BASE_REF
+            if [[ $PR_BASE_REF != releases/* ]]; then
+              npm install
+              npm run build
+            fi
         - name: Setup kubectl
           uses: ./
           with: 
             version: 'v3.8.0'   
-        - name: Trigger Test run
-          run:
-            helm version
+        - name: Validate 3.8.0
+          run: |
+            if [ $(helm version) != 'v3.8.0' ]; then
+                echo "HELM VERSION INCORRECT: LOOKING FOR $(HELM_3_8_0) GOT $(helm version)"
