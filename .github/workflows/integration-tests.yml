@@ -32,3 +32,4 @@ jobs:
           run: |
             if [ $(helm version) != 'v3.8.0' ]; then
                 echo "HELM VERSION INCORRECT: LOOKING FOR $(HELM_3_8_0) GOT $(helm version)"
+            fi
