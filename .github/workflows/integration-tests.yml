@@ -11,8 +11,6 @@ jobs:
       steps:
         - name: Check out repository
           uses: actions/checkout@v2
-          with:
-              path: IntegrationTests
         - name: Setup kubectl
           uses: ./
           with: 
