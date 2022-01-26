@@ -5,10 +5,6 @@ inputs:
     description: 'Version of helm'
     required: true
     default: 'latest'
-  token:
-    description: 'Github token'
-    default: ${{ github.token }}
-    required: true
 outputs:
   helm-path:
     description: 'Path to the cached helm binary'
