@@ -6,19 +6,63 @@ import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import * as fs from 'fs';
-import * as semver from 'semver';
 
 import * as toolCache from '@actions/tool-cache';
 import * as core from '@actions/core';
-import { graphql } from '@octokit/graphql';
 
 const helmToolName = 'helm';
-const stableHelmVersion = 'v3.2.1';
-const stableHelm3Version = 'v3.7.2';
-const stableHelm2Version = 'v2.17.0';
-const LATEST_HELM2_VERSION = '2.*';
-const LATEST_HELM3_VERSION = '3.*';
+const stableHelmVersion = 'v3.8.0';
 const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases';
+
+export async function run() {
+    let version = core.getInput('version', { 'required': true });
+
+    if (version.toLocaleLowerCase() === 'latest') {
+        version = await getLatestHelmVersion();
+    }
+
+    core.debug(util.format("Downloading %s", version));
+    let cachedPath = await downloadHelm(version);
+
+    try {
+
+        if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
+            core.addPath(path.dirname(cachedPath));
+        }
+    }
+    catch {
+        //do nothing, set as output variable
+    }
+
+    console.log(`Helm tool version: '${version}' has been cached at ${cachedPath}`);
+    core.setOutput('helm-path', cachedPath);
+}
+
+// Downloads the helm releases JSON and parses all the recent versions of helm from it. 
+// Defaults to sending stable helm version if none are valid or if it fails
+
+export async function getLatestHelmVersion(): Promise<string> {
+    const helmJSONPath: string = await toolCache.downloadTool(helmAllReleasesUrl);
+    
+    try {
+        const helmJSON = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
+        for(let i in helmJSON) {
+            if(isValidVersion(helmJSON[i].tag_name)) {
+                return helmJSON[i].tag_name;
+            }
+        }
+    } catch(err) {
+        core.warning(util.format("Error while fetching the latest Helm release. Error: %s. Using default Helm version %s", err.toString(), stableHelmVersion));
+        return stableHelmVersion;
+    }
+    
+    return stableHelmVersion;
+}
+
+// isValidVersion checks if verison is a stable release
+function isValidVersion(version: string): boolean {
+    return version.indexOf('rc') == -1;
+}
 
 export function getExecutableExtension(): string {
     if (os.type().match(/^Win/)) {
@@ -57,50 +101,7 @@ export function getHelmDownloadURL(version: string): string {
     }
 }
 
-export async function getStableHelmVersion(): Promise<string> {
-    try {
-        const downloadPath = await toolCache.downloadTool(helmAllReleasesUrl);
-        const responseArray = JSON.parse(fs.readFileSync(downloadPath, 'utf8').toString().trim());
-        let latestHelmVersion = semver.clean(stableHelmVersion);
-        responseArray.forEach(response => {
-            if (response && response.tag_name) {
-                let currentHelmVerison = semver.clean(response.tag_name.toString());
-                if (currentHelmVerison) {
-                    if (currentHelmVerison.toString().indexOf('rc') == -1 && semver.gt(currentHelmVerison, latestHelmVersion)) {
-                        //If current helm version is not a pre release and is greater than latest helm version
-                        latestHelmVersion = currentHelmVerison;
-                    }
-                }
-            }
-        });
-        latestHelmVersion = "v" + latestHelmVersion;
-        return latestHelmVersion;
-    } catch (error) {
-        core.warning(util.format("Cannot get the latest Helm info from %s. Error %s. Using default Helm version %s.", helmAllReleasesUrl, error, stableHelmVersion));
-    }
-
-    return stableHelmVersion;
-}
-
-export var walkSync = function (dir, filelist, fileToFind) {
-    var files = fs.readdirSync(dir);
-    filelist = filelist || [];
-    files.forEach(function (file) {
-        if (fs.statSync(path.join(dir, file)).isDirectory()) {
-            filelist = walkSync(path.join(dir, file), filelist, fileToFind);
-        }
-        else {
-            core.debug(file);
-            if (file == fileToFind) {
-                filelist.push(path.join(dir, file));
-            }
-        }
-    });
-    return filelist;
-};
-
 export async function downloadHelm(version: string): Promise<string> {
-    if (!version) { version = await getStableHelmVersion(); }
     let cachedToolpath = toolCache.find(helmToolName, version);
     if (!cachedToolpath) {
         let helmDownloadPath;
@@ -124,49 +125,6 @@ export async function downloadHelm(version: string): Promise<string> {
     return helmpath;
 }
 
-async function getLatestHelmVersionFor(type: string): Promise<string> {
-    const token = core.getInput('token', { 'required': true });
-    try {
-        const { repository } = await graphql(
-            `{
-                repository(name: "helm", owner: "helm") {
-                    releases(last: 100)  {
-                        nodes {
-                            tagName
-                        }
-                    }
-                }
-            }`,
-            {
-                headers: {
-                    authorization: `token ${token}`
-                }
-            }
-        );
-
-        const releases = repository.releases.nodes.reverse();
-        let latestValidRelease = releases.find(release => isValidVersion(release.tagName, type));
-        if (latestValidRelease)
-            return latestValidRelease.tagName;
-    } catch (err) {
-        core.warning(util.format("Error while fetching the latest Helm %s release. Error: %s. Using default Helm version %s.", type, err.toString(), getStableHelmVersionFor(type)));
-        return getStableHelmVersionFor(type);
-    }
-    core.warning(util.format("Could not find stable release for Helm %s. Using default Helm version %s.", type, getStableHelmVersionFor(type)));
-    return getStableHelmVersionFor(type);
-}
-
-function getStableHelmVersionFor(type: string) {
-    return type === "v2" ? stableHelm2Version : stableHelm3Version;
-}
-
-// isValidVersion checks if verison matches the specified type and is a stable release
-function isValidVersion(version: string, type: string): boolean {
-    if (!version.toLocaleLowerCase().startsWith(type))
-        return false;
-    return version.indexOf('rc') == -1;
-}
-
 export function findHelm(rootFolder: string): string {
     fs.chmodSync(rootFolder, '777');
     var filelist: string[] = [];
@@ -179,40 +137,21 @@ export function findHelm(rootFolder: string): string {
     }
 }
 
-export async function run() {
-    let version = core.getInput('version', { 'required': true });
-
-    if (process.env['HELM_INSTALLER_LEGACY_VERSIONING'] == 'true') {
-        if (version.toLocaleLowerCase() === 'latest') {
-            version = await getStableHelmVersion();
-        } else if (!version.toLocaleLowerCase().startsWith('v')) {
-            version = 'v' + version;
+export var walkSync = function (dir, filelist, fileToFind) {
+    var files = fs.readdirSync(dir);
+    filelist = filelist || [];
+    files.forEach(function (file) {
+        if (fs.statSync(path.join(dir, file)).isDirectory()) {
+            filelist = walkSync(path.join(dir, file), filelist, fileToFind);
         }
-    } else {
-        if (version.toLocaleLowerCase() === 'latest' || version === LATEST_HELM3_VERSION) {
-            version = await getLatestHelmVersionFor("v3");
-        } else if (version === LATEST_HELM2_VERSION) {
-            version = await getLatestHelmVersionFor("v2");
-        } else if (!version.toLocaleLowerCase().startsWith('v')) {
-            version = 'v' + version;
+        else {
+            core.debug(file);
+            if (file == fileToFind) {
+                filelist.push(path.join(dir, file));
+            }
         }
-    }
-
-    core.debug(util.format("Downloading %s", version));
-    let cachedPath = await downloadHelm(version);
-
-    try {
-
-        if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
-            core.addPath(path.dirname(cachedPath));
-        }
-    }
-    catch {
-        //do nothing, set as output variable
-    }
-
-    console.log(`Helm tool version: '${version}' has been cached at ${cachedPath}`);
-    core.setOutput('helm-path', cachedPath);
-}
+    });
+    return filelist;
+};
 
 run().catch(core.setFailed);
