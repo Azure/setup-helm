@@ -30,7 +30,7 @@ jobs:
             version: 'v3.8.0'   
         - name: Validate 3.8.0
           run: |
-            if [ $(helm version) != 'v3.8.0' ]; then
+            if [[ $(helm version) != 'v3.8.0' ]]; then
               echo "HELM VERSION INCORRECT: LOOKING FOR $(HELM_3_8_0) GOT $(helm version)"
               exit 1
             fi
