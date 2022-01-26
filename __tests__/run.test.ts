@@ -125,7 +125,7 @@ describe('run.ts', () => {
             return { isDirectory: () =>  isDirectory } as fs.Stats;
         });
 
-        expect(await run.downloadHelm(null)).toBe(path.join('pathToCachedDir', 'helm.exe'));
+        expect(await run.downloadHelm("v4.0.0")).toBe(path.join('pathToCachedDir', 'helm.exe'));
         expect(toolCache.find).toBeCalledWith('helm', 'v4.0.0');
         expect(toolCache.downloadTool).toBeCalledWith('https://get.helm.sh/helm-v4.0.0-windows-amd64.zip');
         expect(fs.chmodSync).toBeCalledWith('pathToTool', '777');
