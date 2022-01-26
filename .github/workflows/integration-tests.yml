@@ -24,11 +24,11 @@ jobs:
               npm install
               npm run build
             fi
-        - name: Setup kubectl
+        - name: Setup helm
           uses: ./
           with: 
             version: ${{ env.HELM_3_8_0 }}
-        - name: Validate 3.8.0
+        - name: Validate helm 3.8.0
           run: |
             if [[ $(helm version) != *$HELM_3_8_0* ]]; then
               echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.8.0"
@@ -37,7 +37,7 @@ jobs:
             else
               echo "HELM VERSION $HELM_3_8_0 INSTALLED SUCCESSFULLY"
             fi
-        - name: Setup kubectl 3.7.2
+        - name: Setup helm 3.7.2
           uses: ./
           with: 
             version: ${{ env.HELM_3_7_2 }}
@@ -49,4 +49,17 @@ jobs:
               exit 1
             else
               echo "HELM VERSION $HELM_3_7_2 INSTALLED SUCCESSFULLY"
+            fi
+        - name: Setup helm 3.5.0
+          uses: ./
+          with: 
+            version: ${{ env.HELM_3_5_0 }}
+        - name: Validate 3.5.0
+          run: |
+            if [[ $(helm version) != *$HELM_3_5_0* ]]; then
+              echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.5.0"
+              echo "HELM VERSION OUTPUT: $(helm version)"
+              exit 1
+            else
+              echo "HELM VERSION $HELM_3_5_0 INSTALLED SUCCESSFULLY"
             fi
