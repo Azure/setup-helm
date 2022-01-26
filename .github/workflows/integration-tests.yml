@@ -9,9 +9,9 @@ jobs:
       name: Trigger Integration tests
       runs-on: ubuntu-latest
       env:
-        HELM_3_8_0: 'v3.8.0'
-        HELM_3_7_2: 'v3.7.2'
-        HELM_3_5_0: 'v3.5.0'
+        HELM_3_8_0: "v3.8.0"
+        HELM_3_7_2: "v3.7.2"
+        HELM_3_5_0: "v3.5.0"
         PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
       steps:
         - name: Check out repository
@@ -27,13 +27,26 @@ jobs:
         - name: Setup kubectl
           uses: ./
           with: 
-            version: 'v3.8.0'   
+            version: $HELM_3_8_0  
         - name: Validate 3.8.0
           run: |
-            if [[ $(helm version) != *"v3.8.0"* ]]; then
+            if [[ $(helm version) != *$HELM_3_8_0* ]]; then
               echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.8.0"
               echo "HELM VERSION OUTPUT: $(helm version)"
               exit 1
             else
               echo "HELM VERSION $HELM_3_8_0 INSTALLED SUCCESSFULLY"
+            fi
+        - name: Setup kubectl 3.7.2
+          uses: ./
+          with: 
+            version: $HELM_3_7_2
+        - name: Validate 3.7.2
+          run: |
+            if [[ $(helm version) != *$HELM_3_7_2* ]]; then
+              echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.7.2"
+              echo "HELM VERSION OUTPUT: $(helm version)"
+              exit 1
+            else
+              echo "HELM VERSION $HELM_3_7_2 INSTALLED SUCCESSFULLY"
             fi
