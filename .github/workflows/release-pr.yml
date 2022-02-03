@@ -29,8 +29,8 @@ jobs:
       - name: Reset promotion branch
         if: ${{ steps.extract-branch-status.outputs.exists == 'true' }}
         run: |
-          git fetch origin master:master
-          git reset --hard master
+          git fetch origin main:main
+          git reset --hard main
       - name: Install packages
         run: |
           rm -rf node_modules/
