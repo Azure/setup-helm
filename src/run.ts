@@ -42,7 +42,7 @@ export async function run() {
 }
 
 //Returns version with proper v before it
-export function getValidVersion(version:string): string {
+export function getValidVersion(version: string): string {
     return "v" + version;
 } 
 
