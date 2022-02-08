@@ -50,11 +50,11 @@ jobs:
           else
             echo "HELM VERSION $HELM_3_7_2 INSTALLED SUCCESSFULLY"
           fi
-      - name: Setup helm 3.5.0
+      - name: Setup helm 3.5.0 with no v in version
         uses: ./
         with:
           version: ${{ env.HELM_NO_V }}
-      - name: Validate 3.5.0
+      - name: Validate 3.5.0 without v in version
         run: |
           if [[ $(helm version) != *$HELM_NO_V* ]]; then
             echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.5.0"
