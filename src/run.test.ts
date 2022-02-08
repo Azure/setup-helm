@@ -60,6 +60,10 @@ describe("run.ts", () => {
     expect(os.arch).toBeCalled();
   });
 
+  test("getValidVersion() - return version with v prepended", () => {
+      expect(run.getValidVersion("3.8.0")).toBe("v3.8.0");
+  });
+  
   test("getHelmDownloadURL() - return the URL to download helm for Windows", () => {
     jest.spyOn(os, "type").mockReturnValue("Windows_NT");
 
