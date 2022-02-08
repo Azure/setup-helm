@@ -17,6 +17,9 @@ const helmAllReleasesUrl = "https://api.github.com/repos/helm/helm/releases";
 export async function run() {
   let version = core.getInput("version", { required: true });
 
+  if(version !== "latest" && version[0] !== "v"){
+      version = getValidVersion(version);
+  }
   if (version.toLocaleLowerCase() === "latest") {
     version = await getLatestHelmVersion();
   }
@@ -37,6 +40,11 @@ export async function run() {
   );
   core.setOutput("helm-path", cachedPath);
 }
+
+//Returns version with proper v before it
+export function getValidVersion(version: string): string {
+    return "v" + version;
+} 
 
 // Downloads the helm releases JSON and parses all the recent versions of helm from it.
 // Defaults to sending stable helm version if none are valid or if it fails

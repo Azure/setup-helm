@@ -11,7 +11,7 @@ jobs:
     env:
       HELM_3_8_0: "v3.8.0"
       HELM_3_7_2: "v3.7.2"
-      HELM_3_5_0: "v3.5.0"
+      HELM_NO_V: "3.5.0"
       PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
     steps:
       - name: Check out repository
@@ -50,13 +50,13 @@ jobs:
           else
             echo "HELM VERSION $HELM_3_7_2 INSTALLED SUCCESSFULLY"
           fi
-      - name: Setup helm 3.5.0
+      - name: Setup helm 3.5.0 with no v in version
         uses: ./
         with:
-          version: ${{ env.HELM_3_5_0 }}
-      - name: Validate 3.5.0
+          version: ${{ env.HELM_NO_V }}
+      - name: Validate 3.5.0 without v in version
         run: |
-          if [[ $(helm version) != *$HELM_3_5_0* ]]; then
+          if [[ $(helm version) != *$HELM_NO_V* ]]; then
             echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.5.0"
             echo "HELM VERSION OUTPUT: $(helm version)"
             exit 1
