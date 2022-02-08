@@ -17,7 +17,7 @@ const helmAllReleasesUrl = "https://api.github.com/repos/helm/helm/releases";
 export async function run() {
   let version = core.getInput("version", { required: true });
 
-  if(version[0] !== "v"){
+  if(version !== "latest" && version[0] !== "v"){
       version = getValidVersion(version);
   }
   if (version.toLocaleLowerCase() === "latest") {
