@@ -13,17 +13,18 @@
         "@octokit/graphql": "^4.6.1",
         "semver": "^6.1.0"
     },
-    "main": "lib/run.js",
+    "main": "lib/index.js",
     "scripts": {
-        "build": "tsc --outDir ./lib --rootDir ./src",
+        "build": "ncc build src/run.ts -o lib",
         "test": "jest",
         "test-coverage": "jest --coverage"
     },
     "devDependencies": {
-        "@types/node": "^12.0.10",
-        "typescript": "^3.5.2",
-        "jest": "^26.0.1",
         "@types/jest": "^25.2.2",
-        "ts-jest": "^25.5.1"
+        "@types/node": "^12.0.10",
+        "@vercel/ncc": "^0.33.1",
+        "jest": "^26.0.1",
+        "ts-jest": "^25.5.1",
+        "typescript": "^3.5.2"
     }
 }
