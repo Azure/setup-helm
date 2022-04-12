@@ -1,0 +1,62 @@
+name: "Trigger Integration tests"
+on:
+  push:
+jobs:
+  trigger-integration-tests:
+    name: Trigger Integration tests - macos-latest
+    runs-on: macos-latest
+    env:
+      HELM_3_8_0: "v3.8.0"
+      HELM_3_7_2: "v3.7.2"
+      HELM_NO_V: "3.5.0"
+      PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: npm install and build
+        id: action-npm-build
+        run: |
+          echo $PR_BASE_REF
+          if [[ $PR_BASE_REF != releases/* ]]; then
+            npm install
+            npm run build
+          fi
+      - name: Setup helm
+        uses: ./
+        with:
+          version: ${{ env.HELM_3_8_0 }}
+      - name: Validate helm 3.8.0
+        run: |
+          if [[ $(helm version) != *$HELM_3_8_0* ]]; then
+            echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.8.0"
+            echo "HELM VERSION OUTPUT: $(helm version)"
+            exit 1
+          else
+            echo "HELM VERSION $HELM_3_8_0 INSTALLED SUCCESSFULLY"
+          fi
+      - name: Setup helm 3.7.2
+        uses: ./
+        with:
+          version: ${{ env.HELM_3_7_2 }}
+      - name: Validate 3.7.2
+        run: |
+          if [[ $(helm version) != *$HELM_3_7_2* ]]; then
+            echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.7.2"
+            echo "HELM VERSION OUTPUT: $(helm version)"
+            exit 1
+          else
+            echo "HELM VERSION $HELM_3_7_2 INSTALLED SUCCESSFULLY"
+          fi
+      - name: Setup helm 3.5.0 with no v in version
+        uses: ./
+        with:
+          version: ${{ env.HELM_NO_V }}
+      - name: Validate 3.5.0 without v in version
+        run: |
+          if [[ $(helm version) != *$HELM_NO_V* ]]; then
+            echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN v3.5.0"
+            echo "HELM VERSION OUTPUT: $(helm version)"
+            exit 1
+          else
+            echo "HELM VERSION $HELM_3_5_0 INSTALLED SUCCESSFULLY"
+          fi
