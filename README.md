@@ -1,5 +1,7 @@
 # Setup Helm
+
 Install a specific version of helm binary on the runner.
+
 ## Example
 
 Acceptable values are latest or any semantic version string like v3.5.0 Use this action in workflow to define which version of helm will be used. v2 of this action only supports Helm3.
@@ -7,7 +9,7 @@ Acceptable values are latest or any semantic version string like v3.5.0 Use this
 ```yaml
 - uses: azure/setup-helm@v1
   with:
-    version: '<version>' # default is latest stable
+     version: '<version>' # default is latest stable
   id: install
 ```
 
@@ -16,7 +18,7 @@ Refer to the action metadata file for details about all the inputs https://githu
 
 # Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
 
