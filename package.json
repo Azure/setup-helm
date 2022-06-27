@@ -20,11 +20,11 @@
         "test-coverage": "jest --coverage"
     },
     "devDependencies": {
-        "@types/jest": "^25.2.2",
+        "@types/jest": "^26.0.0",
         "@types/node": "^12.0.10",
         "@vercel/ncc": "^0.33.1",
         "jest": "^26.0.1",
-        "ts-jest": "^25.5.1",
+        "ts-jest": "^26.0.0",
         "typescript": "^3.5.2"
     }
 }
