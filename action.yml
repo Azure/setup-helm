@@ -1,15 +1,15 @@
-name: "Helm tool installer"
-description: "Install a specific version of helm binary. Acceptable values are latest or any semantic version string like 1.15.0"
+name: 'Helm tool installer'
+description: 'Install a specific version of helm binary. Acceptable values are latest or any semantic version string like 1.15.0'
 inputs:
-  version:
-    description: "Version of helm"
-    required: true
-    default: "latest"
+   version:
+      description: 'Version of helm'
+      required: true
+      default: 'latest'
 outputs:
-  helm-path:
-    description: "Path to the cached helm binary"
+   helm-path:
+      description: 'Path to the cached helm binary'
 branding:
-  color: "blue"
+   color: 'blue'
 runs:
-  using: "node16"
-  main: "lib/index.js"
+   using: 'node16'
+   main: 'lib/index.js'
