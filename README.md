@@ -4,7 +4,7 @@ Install a specific version of helm binary on the runner.
 
 ## Example
 
-Acceptable values are latest or any semantic version string like v3.5.0 Use this action in workflow to define which version of helm will be used. v2 and v3 of this action only supports Helm3.
+Acceptable values are latest or any semantic version string like v3.5.0 Use this action in workflow to define which version of helm will be used. v2 and v3 of this action only support Helm3.
 
 ```yaml
 - uses: azure/setup-helm@v3
