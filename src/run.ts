@@ -9,10 +9,10 @@ import * as fs from 'fs'
 
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
+import {graphql} from '@octokit/graphql'
 
 const helmToolName = 'helm'
-const stableHelmVersion = 'v3.8.0'
-const helmAllReleasesUrl = 'https://api.github.com/repos/helm/helm/releases'
+const stableHelmVersion = 'v3.9.0'
 
 export async function run() {
    let version = core.getInput('version', {required: true})
@@ -46,30 +46,37 @@ export function getValidVersion(version: string): string {
    return 'v' + version
 }
 
-// Downloads the helm releases JSON and parses all the recent versions of helm from it.
-// Defaults to sending stable helm version if none are valid or if it fails
-
+// Gets the latest helm version or returns a default stable if getting latest fails
 export async function getLatestHelmVersion(): Promise<string> {
-   const helmJSONPath: string = await toolCache.downloadTool(helmAllReleasesUrl)
-
    try {
-      const helmJSON = JSON.parse(fs.readFileSync(helmJSONPath, 'utf-8'))
-      for (let i in helmJSON) {
-         if (isValidVersion(helmJSON[i].tag_name)) {
-            return helmJSON[i].tag_name
-         }
-      }
+      const {repository} = await graphql(
+         `
+            {
+               repository(name: "helm", owner: "helm") {
+                  releases(last: 100) {
+                     nodes {
+                        tagName
+                     }
+                  }
+               }
+            }
+         `
+      )
+      const releases = repository.releases.nodes.reverse()
+      const latestValidRelease = releases.find((release: {tagName: string}) =>
+         isValidVersion(release.tagName)
+      )
+      if (latestValidRelease) return latestValidRelease
    } catch (err) {
       core.warning(
-         util.format(
-            'Error while fetching the latest Helm release. Error: %s. Using default Helm version %s',
-            err.toString(),
-            stableHelmVersion
-         )
+         `Error while fetching latest Helm release: ${err.toString()}. Using default version ${stableHelmVersion}`
       )
       return stableHelmVersion
    }
 
+   core.debug(
+      `Could not find valid release. Using default version ${stableHelmVersion}`
+   )
    return stableHelmVersion
 }
 

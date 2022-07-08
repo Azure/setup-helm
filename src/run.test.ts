@@ -74,7 +74,7 @@ describe('run.ts', () => {
       expect(os.type).toBeCalled()
    })
 
-   test('getLatestHelmVersion() - return the latest version of HELM', async () => {
+   test('getLatestHelmVersion() - return the stable version of HELM since its not authenticated', async () => {
       try {
          expect(await run.getLatestHelmVersion()).toBe('v3.8.0')
       } catch (e) {
