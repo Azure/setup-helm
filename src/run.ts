@@ -25,8 +25,9 @@ export async function run() {
       version = await getLatestHelmVersion()
    }
 
-   core.info(`Downloading ${version}`)
+   core.startGroup(`Downloading ${version}`)
    const cachedPath = await downloadHelm(version)
+   core.endGroup()
 
    try {
       if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
