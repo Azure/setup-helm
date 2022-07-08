@@ -18,14 +18,15 @@ export async function run() {
    let version = core.getInput('version', {required: true})
 
    if (version !== 'latest' && version[0] !== 'v') {
+      core.info('Getting latest Helm version')
       version = getValidVersion(version)
    }
    if (version.toLocaleLowerCase() === 'latest') {
       version = await getLatestHelmVersion()
    }
 
-   core.debug(util.format('Downloading %s', version))
-   let cachedPath = await downloadHelm(version)
+   core.info(`Downloading ${version}`)
+   const cachedPath = await downloadHelm(version)
 
    try {
       if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
@@ -35,13 +36,11 @@ export async function run() {
       //do nothing, set as output variable
    }
 
-   console.log(
-      `Helm tool version: '${version}' has been cached at ${cachedPath}`
-   )
+   core.info(`Helm tool version '${version}' has been cached at ${cachedPath}`)
    core.setOutput('helm-path', cachedPath)
 }
 
-//Returns version with proper v before it
+// Prefixes version with v
 export function getValidVersion(version: string): string {
    return 'v' + version
 }
@@ -74,7 +73,7 @@ export async function getLatestHelmVersion(): Promise<string> {
       return stableHelmVersion
    }
 
-   core.debug(
+   core.warning(
       `Could not find valid release. Using default version ${stableHelmVersion}`
    )
    return stableHelmVersion
@@ -142,10 +141,9 @@ export async function downloadHelm(version: string): Promise<string> {
          )
       } catch (exception) {
          throw new Error(
-            util.format(
-               'Failed to download Helm from location',
-               getHelmDownloadURL(version)
-            )
+            `Failed to download Helm from location ${getHelmDownloadURL(
+               version
+            )}`
          )
       }
 
