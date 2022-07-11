@@ -140,6 +140,9 @@ test('parse()', function (t) {
     t.test('limits specific array indices to arrayLimit', function (st) {
         st.deepEqual(qs.parse('a[20]=a', { arrayLimit: 20 }), { a: ['a'] });
         st.deepEqual(qs.parse('a[21]=a', { arrayLimit: 20 }), { a: { 21: 'a' } });
+
+        st.deepEqual(qs.parse('a[20]=a'), { a: ['a'] });
+        st.deepEqual(qs.parse('a[21]=a'), { a: { 21: 'a' } });
         st.end();
     });
 
@@ -378,6 +381,7 @@ test('parse()', function (t) {
         st.deepEqual(qs.parse('?foo=bar', { ignoreQueryPrefix: true }), { foo: 'bar' });
         st.deepEqual(qs.parse('foo=bar', { ignoreQueryPrefix: true }), { foo: 'bar' });
         st.deepEqual(qs.parse('?foo=bar', { ignoreQueryPrefix: false }), { '?foo': 'bar' });
+
         st.end();
     });
 
@@ -406,6 +410,16 @@ test('parse()', function (t) {
         st.deepEqual(qs.parse('foo=', { comma: true }), { foo: '' });
         st.deepEqual(qs.parse('foo', { comma: true }), { foo: '' });
         st.deepEqual(qs.parse('foo', { comma: true, strictNullHandling: true }), { foo: null });
+
+        // test cases inversed from from stringify tests
+        st.deepEqual(qs.parse('a[0]=c'), { a: ['c'] });
+        st.deepEqual(qs.parse('a[]=c'), { a: ['c'] });
+        st.deepEqual(qs.parse('a[]=c', { comma: true }), { a: ['c'] });
+
+        st.deepEqual(qs.parse('a[0]=c&a[1]=d'), { a: ['c', 'd'] });
+        st.deepEqual(qs.parse('a[]=c&a[]=d'), { a: ['c', 'd'] });
+        st.deepEqual(qs.parse('a=c,d', { comma: true }), { a: ['c', 'd'] });
+
         st.end();
     });
 

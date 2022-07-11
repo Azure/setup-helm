@@ -131,6 +131,38 @@ test('stringify()', function (t) {
         st.end();
     });
 
+    t.test('stringifies an array value with one item vs multiple items', function (st) {
+        st.test('non-array item', function (s2t) {
+            s2t.equal(qs.stringify({ a: 'c' }, { encodeValuesOnly: true, arrayFormat: 'indices' }), 'a=c');
+            s2t.equal(qs.stringify({ a: 'c' }, { encodeValuesOnly: true, arrayFormat: 'brackets' }), 'a=c');
+            s2t.equal(qs.stringify({ a: 'c' }, { encodeValuesOnly: true, arrayFormat: 'comma' }), 'a=c');
+            s2t.equal(qs.stringify({ a: 'c' }, { encodeValuesOnly: true }), 'a=c');
+
+            s2t.end();
+        });
+
+        st.test('array with a single item', function (s2t) {
+            s2t.equal(qs.stringify({ a: ['c'] }, { encodeValuesOnly: true, arrayFormat: 'indices' }), 'a[0]=c');
+            s2t.equal(qs.stringify({ a: ['c'] }, { encodeValuesOnly: true, arrayFormat: 'brackets' }), 'a[]=c');
+            s2t.equal(qs.stringify({ a: ['c'] }, { encodeValuesOnly: true, arrayFormat: 'comma' }), 'a=c');
+            s2t.equal(qs.stringify({ a: ['c'] }, { encodeValuesOnly: true, arrayFormat: 'comma', commaRoundTrip: true }), 'a[]=c'); // so it parses back as an array
+            s2t.equal(qs.stringify({ a: ['c'] }, { encodeValuesOnly: true }), 'a[0]=c');
+
+            s2t.end();
+        });
+
+        st.test('array with multiple items', function (s2t) {
+            s2t.equal(qs.stringify({ a: ['c', 'd'] }, { encodeValuesOnly: true, arrayFormat: 'indices' }), 'a[0]=c&a[1]=d');
+            s2t.equal(qs.stringify({ a: ['c', 'd'] }, { encodeValuesOnly: true, arrayFormat: 'brackets' }), 'a[]=c&a[]=d');
+            s2t.equal(qs.stringify({ a: ['c', 'd'] }, { encodeValuesOnly: true, arrayFormat: 'comma' }), 'a=c,d');
+            s2t.equal(qs.stringify({ a: ['c', 'd'] }, { encodeValuesOnly: true }), 'a[0]=c&a[1]=d');
+
+            s2t.end();
+        });
+
+        st.end();
+    });
+
     t.test('stringifies a nested array value', function (st) {
         st.equal(qs.stringify({ a: { b: ['c', 'd'] } }, { encodeValuesOnly: true, arrayFormat: 'indices' }), 'a[b][0]=c&a[b][1]=d');
         st.equal(qs.stringify({ a: { b: ['c', 'd'] } }, { encodeValuesOnly: true, arrayFormat: 'brackets' }), 'a[b][]=c&a[b][]=d');
@@ -349,11 +381,13 @@ test('stringify()', function (t) {
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'brackets' }), 'b[]=&c=c');
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'repeat' }), 'b=&c=c');
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'comma' }), 'b=&c=c');
+        st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'comma', commaRoundTrip: true }), 'b[]=&c=c');
         // with strictNullHandling
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'indices', strictNullHandling: true }), 'b[0]&c=c');
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'brackets', strictNullHandling: true }), 'b[]&c=c');
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'repeat', strictNullHandling: true }), 'b&c=c');
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'comma', strictNullHandling: true }), 'b&c=c');
+        st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'comma', strictNullHandling: true, commaRoundTrip: true }), 'b[]&c=c');
         // with skipNulls
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'indices', skipNulls: true }), 'c=c');
         st.equal(qs.stringify({ a: [], b: [null], c: 'c' }, { encode: false, arrayFormat: 'brackets', skipNulls: true }), 'c=c');
@@ -684,6 +718,18 @@ test('stringify()', function (t) {
             'a=' + date.getTime(),
             'works with arrayFormat comma'
         );
+        st.equal(
+            qs.stringify(
+                { a: [date] },
+                {
+                    serializeDate: function (d) { return d.getTime(); },
+                    arrayFormat: 'comma',
+                    commaRoundTrip: true
+                }
+            ),
+            'a%5B%5D=' + date.getTime(),
+            'works with arrayFormat comma'
+        );
 
         st.end();
     });
@@ -714,16 +760,14 @@ test('stringify()', function (t) {
     });
 
     t.test('Edge cases and unknown formats', function (st) {
-        ['UFO1234', false, 1234, null, {}, []].forEach(
-            function (format) {
-                st['throws'](
-                    function () {
-                        qs.stringify({ a: 'b c' }, { format: format });
-                    },
-                    new TypeError('Unknown format option provided.')
-                );
-            }
-        );
+        ['UFO1234', false, 1234, null, {}, []].forEach(function (format) {
+            st['throws'](
+                function () {
+                    qs.stringify({ a: 'b c' }, { format: format });
+                },
+                new TypeError('Unknown format option provided.')
+            );
+        });
         st.end();
     });
 
