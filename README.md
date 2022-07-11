@@ -9,14 +9,16 @@ Acceptable values are latest or any semantic version string like v3.5.0 Use this
 ```yaml
 - uses: azure/setup-helm@v3
   with:
-     version: '<version>' # default is latest stable
+     version: '<version>' # default is latest (stable)
   id: install
 ```
+
+> Note: When using latest version you might hit the GitHub GraphQL API hourly rate limit of 5,000. The action will then return the hardcoded default stable version (currently v3.9.0). If you rely on a certain version higher than the default, you should use that version instead of latest.
 
 The cached helm binary path is prepended to the PATH environment variable as well as stored in the helm-path output variable.
 Refer to the action metadata file for details about all the inputs https://github.com/Azure/setup-helm/blob/master/action.yml
 
-# Contributing
+## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
