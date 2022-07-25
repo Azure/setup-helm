@@ -5,6 +5,9 @@ inputs:
       description: 'Version of helm'
       required: true
       default: 'latest'
+   token:
+      description: GitHub token. Required only if 'version' == 'latest'
+      required: false
 outputs:
    helm-path:
       description: 'Path to the cached helm binary'
