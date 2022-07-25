@@ -10,6 +10,7 @@ Acceptable values are latest or any semantic version string like v3.5.0 Use this
 - uses: azure/setup-helm@v3
   with:
      version: '<version>' # default is latest (stable)
+     token: ${{ secrets.GITHUB_TOKEN }} # only needed if version is 'latest'
   id: install
 ```
 

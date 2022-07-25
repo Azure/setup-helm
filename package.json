@@ -10,6 +10,7 @@
       "@actions/exec": "^1.0.0",
       "@actions/io": "^1.0.0",
       "@actions/tool-cache": "1.1.2",
+      "@octokit/auth-action": "^2.0.0",
       "@octokit/graphql": "^4.6.1",
       "semver": "^6.1.0"
    },
