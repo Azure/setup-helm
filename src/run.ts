@@ -68,10 +68,10 @@ export async function getLatestHelmVersion(): Promise<string> {
             }
          `
       )
-      const releases = repository.releases.nodes.reverse()
-      const latestValidRelease = releases.find((release: {tagName: string}) =>
-         isValidVersion(release.tagName)
-      )
+      const releases: string[] = repository.releases.nodes
+         .reverse()
+         .map((node: {tagName: string}) => node.tagName)
+      const latestValidRelease = releases.find((tag) => isValidVersion(tag))
       if (latestValidRelease) return latestValidRelease
    } catch (err) {
       core.warning(
