@@ -10,6 +10,8 @@ import * as fs from 'fs'
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
 import {graphql} from '@octokit/graphql'
+import {createActionAuth} from '@octokit/auth-action'
+import {create} from 'domain'
 
 const helmToolName = 'helm'
 const stableHelmVersion = 'v3.9.0'
@@ -49,7 +51,11 @@ export function getValidVersion(version: string): string {
 // Gets the latest helm version or returns a default stable if getting latest fails
 export async function getLatestHelmVersion(): Promise<string> {
    try {
-      const {repository} = await graphql(
+      const auth = createActionAuth()
+      const graphqlAuthenticated = graphql.defaults({
+         request: {hook: auth.hook}
+      })
+      const {repository} = await graphqlAuthenticated(
          `
             {
                repository(name: "helm", owner: "helm") {
