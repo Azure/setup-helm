@@ -71,12 +71,11 @@ export async function getLatestHelmVersion(): Promise<string> {
             }
          `
       )
-      const latestValidRelease: string = repository.releases.nodes
-         .find(
-            ({tagName, isLatest, isDraft, isPreRelease}) => 
-                isValidVersion(tagName) && isLatest && !isDraft && !isPreRelease
-          )?.tagName
-
+    const latestValidRelease: string = repository.releases.nodes.find(
+      ({ tagName, isLatest, isDraft, isPreRelease }) =>
+        isValidVersion(tagName) && isLatest && !isDraft && !isPreRelease
+    )?.tagName;
+    
       if (latestValidRelease) return latestValidRelease
    } catch (err) {
       core.warning(
