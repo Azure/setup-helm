@@ -62,6 +62,9 @@ export async function getLatestHelmVersion(): Promise<string> {
                   releases(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
                      nodes {
                         tagName
+                        isLatest
+                        isDraft
+                        isPrerelease
                      }
                   }
                }
