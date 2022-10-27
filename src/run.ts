@@ -59,19 +59,23 @@ export async function getLatestHelmVersion(): Promise<string> {
          `
             {
                repository(name: "helm", owner: "helm") {
-                  releases(last: 100) {
+                  releases(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
                      nodes {
                         tagName
+                        isLatest
+                        isDraft
+                        isPrerelease
                      }
                   }
                }
             }
          `
       )
-      const releases: string[] = repository.releases.nodes
-         .reverse()
-         .map((node: {tagName: string}) => node.tagName)
-      const latestValidRelease = releases.find((tag) => isValidVersion(tag))
+      const latestValidRelease: string = repository.releases.nodes.find(
+         ({tagName, isLatest, isDraft, isPreRelease}) =>
+            isValidVersion(tagName) && isLatest && !isDraft && !isPreRelease
+      )?.tagName
+
       if (latestValidRelease) return latestValidRelease
    } catch (err) {
       core.warning(
