@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+   - name: GitHub Action "setup-helm" Support
+     url: https://github.com/Azure/setup-helm
+     security: https://github.com/Azure/setup-helm/blob/main/SECURITY.md
+     about: Please ask and answer questions here.
