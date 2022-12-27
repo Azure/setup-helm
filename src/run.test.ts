@@ -23,19 +23,19 @@ describe('run.ts', () => {
    test('getHelmDownloadURL() - return the URL to download helm for Linux', () => {
       jest.spyOn(os, 'type').mockReturnValue('Linux')
       jest.spyOn(os, 'arch').mockReturnValueOnce('unknown')
-      const kubectlLinuxUrl = 'https://get.helm.sh/helm-v3.8.0-linux-amd64.zip'
+      const helmLinuxUrl = 'https://get.helm.sh/helm-v3.8.0-linux-amd64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlLinuxUrl)
+      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmLinuxUrl)
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Linux')
       jest.spyOn(os, 'arch').mockReturnValueOnce('arm64')
-      const kubectlLinuxArm64Url =
+      const helmLinuxArm64Url =
          'https://get.helm.sh/helm-v3.8.0-linux-arm64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlLinuxArm64Url)
+      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmLinuxArm64Url)
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
    })
@@ -43,20 +43,19 @@ describe('run.ts', () => {
    test('getHelmDownloadURL() - return the URL to download helm for Darwin', () => {
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
       jest.spyOn(os, 'arch').mockReturnValueOnce('unknown')
-      const kubectlDarwinUrl =
-         'https://get.helm.sh/helm-v3.8.0-darwin-amd64.zip'
+      const helmDarwinUrl = 'https://get.helm.sh/helm-v3.8.0-darwin-amd64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlDarwinUrl)
+      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmDarwinUrl)
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
       jest.spyOn(os, 'arch').mockReturnValueOnce('arm64')
-      const kubectlDarwinArm64Url =
+      const helmDarwinArm64Url =
          'https://get.helm.sh/helm-v3.8.0-darwin-arm64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlDarwinArm64Url)
+      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmDarwinArm64Url)
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
    })
@@ -68,14 +67,13 @@ describe('run.ts', () => {
    test('getHelmDownloadURL() - return the URL to download helm for Windows', () => {
       jest.spyOn(os, 'type').mockReturnValue('Windows_NT')
 
-      const kubectlWindowsUrl =
-         'https://get.helm.sh/helm-v3.8.0-windows-amd64.zip'
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(kubectlWindowsUrl)
+      const helmWindowsUrl = 'https://get.helm.sh/helm-v3.8.0-windows-amd64.zip'
+      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmWindowsUrl)
       expect(os.type).toBeCalled()
    })
 
    test('getLatestHelmVersion() - return the stable version of HELM since its not authenticated', async () => {
-      expect(await run.getLatestHelmVersion()).toBe('v3.9.0')
+      expect(await run.getLatestHelmVersion()).toBe('v3.10.2')
    })
 
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {

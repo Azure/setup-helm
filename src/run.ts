@@ -11,10 +11,9 @@ import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
 import {graphql} from '@octokit/graphql'
 import {createActionAuth} from '@octokit/auth-action'
-import {create} from 'domain'
 
 const helmToolName = 'helm'
-const stableHelmVersion = 'v3.9.0'
+const stableHelmVersion = 'v3.10.2'
 
 export async function run() {
    let version = core.getInput('version', {required: true})
