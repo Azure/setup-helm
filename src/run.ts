@@ -13,7 +13,7 @@ import {graphql} from '@octokit/graphql'
 import {createActionAuth} from '@octokit/auth-action'
 
 const helmToolName = 'helm'
-const stableHelmVersion = 'v3.10.2'
+const stableHelmVersion = 'v3.11.1'
 
 export async function run() {
    let version = core.getInput('version', {required: true})
