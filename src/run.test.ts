@@ -73,7 +73,7 @@ describe('run.ts', () => {
    })
 
    test('getLatestHelmVersion() - return the stable version of HELM since its not authenticated', async () => {
-      expect(await run.getLatestHelmVersion()).toBe('v3.10.2')
+      expect(await run.getLatestHelmVersion()).toBe('v3.11.1')
    })
 
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {
