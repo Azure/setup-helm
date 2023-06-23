@@ -8,6 +8,7 @@ inputs:
    token:
       description: GitHub token. Required only if 'version' == 'latest'
       required: false
+      default: "${{ github.token }}"
 outputs:
    helm-path:
       description: 'Path to the cached helm binary'
