@@ -8,6 +8,10 @@ inputs:
    token:
       description: GitHub token. Required only if 'version' == 'latest'
       required: false
+   downloadBaseURL:
+      description: 'Set the download base URL'
+      required: false
+      default: 'https://get.helm.sh'
 outputs:
    helm-path:
       description: 'Path to the cached helm binary'
