@@ -111,7 +111,7 @@ export function getHelmDownloadURL(baseURL: string, version: string): string {
    const arch = os.arch()
    const operatingSystem = os.type()
 
-   let urlPath = ""
+   let urlPath = ''
 
    switch (true) {
       case operatingSystem == LINUX && arch == ARM64:
@@ -135,7 +135,10 @@ export function getHelmDownloadURL(baseURL: string, version: string): string {
    return url.toString()
 }
 
-export async function downloadHelm(baseURL: string, version: string): Promise<string> {
+export async function downloadHelm(
+   baseURL: string,
+   version: string
+): Promise<string> {
    let cachedToolpath = toolCache.find(helmToolName, version)
    if (!cachedToolpath) {
       let helmDownloadPath
@@ -146,7 +149,8 @@ export async function downloadHelm(baseURL: string, version: string): Promise<st
       } catch (exception) {
          throw new Error(
             `Failed to download Helm from location ${getHelmDownloadURL(
-               baseURL, version
+               baseURL,
+               version
             )}`
          )
       }

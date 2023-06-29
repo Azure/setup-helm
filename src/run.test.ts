@@ -27,17 +27,20 @@ describe('run.ts', () => {
       jest.spyOn(os, 'arch').mockReturnValueOnce('unknown')
       const helmLinuxUrl = 'https://test.tld/helm-v3.8.0-linux-amd64.zip'
 
-      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(helmLinuxUrl)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmLinuxUrl
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Linux')
       jest.spyOn(os, 'arch').mockReturnValueOnce('arm64')
-      const helmLinuxArm64Url =
-         'https://test.tld/helm-v3.8.0-linux-arm64.zip'
+      const helmLinuxArm64Url = 'https://test.tld/helm-v3.8.0-linux-arm64.zip'
 
-      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(helmLinuxArm64Url)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmLinuxArm64Url
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
    })
@@ -49,17 +52,20 @@ describe('run.ts', () => {
       jest.spyOn(os, 'arch').mockReturnValueOnce('unknown')
       const helmDarwinUrl = 'https://test.tld/helm-v3.8.0-darwin-amd64.zip'
 
-      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(helmDarwinUrl)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmDarwinUrl
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
       jest.spyOn(os, 'arch').mockReturnValueOnce('arm64')
-      const helmDarwinArm64Url =
-         'https://test.tld/helm-v3.8.0-darwin-arm64.zip'
+      const helmDarwinArm64Url = 'https://test.tld/helm-v3.8.0-darwin-arm64.zip'
 
-      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(helmDarwinArm64Url)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmDarwinArm64Url
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
    })
@@ -74,7 +80,9 @@ describe('run.ts', () => {
       jest.spyOn(os, 'type').mockReturnValue('Windows_NT')
 
       const helmWindowsUrl = 'https://test.tld/helm-v3.8.0-windows-amd64.zip'
-      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(helmWindowsUrl)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmWindowsUrl
+      )
       expect(os.type).toBeCalled()
    })
 
