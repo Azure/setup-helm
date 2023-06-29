@@ -111,36 +111,28 @@ export function getHelmDownloadURL(baseURL: string, version: string): string {
    const arch = os.arch()
    const operatingSystem = os.type()
 
+   let urlPath = ""
+
    switch (true) {
       case operatingSystem == LINUX && arch == ARM64:
-         return util.format(
-            `${baseURL}/helm-%s-linux-arm64.zip`,
-            version
-         )
+         urlPath = util.format(`/helm-%s-linux-arm64.zip`, version)
+         break
       case operatingSystem == LINUX:
-         return util.format(
-            `${baseURL}/helm-%s-linux-amd64.zip`,
-            version
-         )
-
+         urlPath = util.format(`/helm-%s-linux-amd64.zip`, version)
+         break
       case operatingSystem == MAC_OS && arch == ARM64:
-         return util.format(
-            `${baseURL}/helm-%s-darwin-arm64.zip`,
-            version
-         )
+         urlPath = util.format(`/helm-%s-darwin-arm64.zip`, version)
+         break
       case operatingSystem == MAC_OS:
-         return util.format(
-            `${baseURL}/helm-%s-darwin-amd64.zip`,
-            version
-         )
-
+         urlPath = util.format(`/helm-%s-darwin-amd64.zip`, version)
+         break
       case operatingSystem == WINDOWS:
       default:
-         return util.format(
-            `${baseURL}/helm-%s-windows-amd64.zip`,
-            version
-         )
+         urlPath = util.format(`/helm-%s-windows-amd64.zip`, version)
    }
+
+   const url = new URL(urlPath, baseURL)
+   return url.toString()
 }
 
 export async function downloadHelm(baseURL: string, version: string): Promise<string> {
