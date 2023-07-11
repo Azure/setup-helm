@@ -12,7 +12,7 @@
       "@actions/tool-cache": "2.0.1",
       "@octokit/auth-action": "^2.0.0",
       "@octokit/graphql": "^4.6.1",
-      "semver": "^6.1.0"
+      "semver": "^6.3.1"
    },
    "main": "lib/index.js",
    "scripts": {
