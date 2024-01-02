@@ -26,8 +26,10 @@ export async function run() {
       version = await getLatestHelmVersion()
    }
 
+   const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
+
    core.startGroup(`Downloading ${version}`)
-   const cachedPath = await downloadHelm(version)
+   const cachedPath = await downloadHelm(downloadBaseURL, version)
    core.endGroup()
 
    try {
@@ -105,53 +107,49 @@ const LINUX = 'Linux'
 const MAC_OS = 'Darwin'
 const WINDOWS = 'Windows_NT'
 const ARM64 = 'arm64'
-export function getHelmDownloadURL(version: string): string {
+export function getHelmDownloadURL(baseURL: string, version: string): string {
    const arch = os.arch()
    const operatingSystem = os.type()
 
+   let urlPath = ''
+
    switch (true) {
       case operatingSystem == LINUX && arch == ARM64:
-         return util.format(
-            'https://get.helm.sh/helm-%s-linux-arm64.zip',
-            version
-         )
+         urlPath = util.format(`/helm-%s-linux-arm64.zip`, version)
+         break
       case operatingSystem == LINUX:
-         return util.format(
-            'https://get.helm.sh/helm-%s-linux-amd64.zip',
-            version
-         )
-
+         urlPath = util.format(`/helm-%s-linux-amd64.zip`, version)
+         break
       case operatingSystem == MAC_OS && arch == ARM64:
-         return util.format(
-            'https://get.helm.sh/helm-%s-darwin-arm64.zip',
-            version
-         )
+         urlPath = util.format(`/helm-%s-darwin-arm64.zip`, version)
+         break
       case operatingSystem == MAC_OS:
-         return util.format(
-            'https://get.helm.sh/helm-%s-darwin-amd64.zip',
-            version
-         )
-
+         urlPath = util.format(`/helm-%s-darwin-amd64.zip`, version)
+         break
       case operatingSystem == WINDOWS:
       default:
-         return util.format(
-            'https://get.helm.sh/helm-%s-windows-amd64.zip',
-            version
-         )
+         urlPath = util.format(`/helm-%s-windows-amd64.zip`, version)
    }
+
+   const url = new URL(urlPath, baseURL)
+   return url.toString()
 }
 
-export async function downloadHelm(version: string): Promise<string> {
+export async function downloadHelm(
+   baseURL: string,
+   version: string
+): Promise<string> {
    let cachedToolpath = toolCache.find(helmToolName, version)
    if (!cachedToolpath) {
       let helmDownloadPath
       try {
          helmDownloadPath = await toolCache.downloadTool(
-            getHelmDownloadURL(version)
+            getHelmDownloadURL(baseURL, version)
          )
       } catch (exception) {
          throw new Error(
             `Failed to download Helm from location ${getHelmDownloadURL(
+               baseURL,
                version
             )}`
          )

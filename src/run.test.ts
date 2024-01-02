@@ -21,41 +21,51 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Linux', () => {
+      const downloadBaseURL = 'https://test.tld'
+
       jest.spyOn(os, 'type').mockReturnValue('Linux')
       jest.spyOn(os, 'arch').mockReturnValueOnce('unknown')
-      const helmLinuxUrl = 'https://get.helm.sh/helm-v3.8.0-linux-amd64.zip'
+      const helmLinuxUrl = 'https://test.tld/helm-v3.8.0-linux-amd64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmLinuxUrl)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmLinuxUrl
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Linux')
       jest.spyOn(os, 'arch').mockReturnValueOnce('arm64')
-      const helmLinuxArm64Url =
-         'https://get.helm.sh/helm-v3.8.0-linux-arm64.zip'
+      const helmLinuxArm64Url = 'https://test.tld/helm-v3.8.0-linux-arm64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmLinuxArm64Url)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmLinuxArm64Url
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Darwin', () => {
+      const downloadBaseURL = 'https://test.tld'
+
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
       jest.spyOn(os, 'arch').mockReturnValueOnce('unknown')
-      const helmDarwinUrl = 'https://get.helm.sh/helm-v3.8.0-darwin-amd64.zip'
+      const helmDarwinUrl = 'https://test.tld/helm-v3.8.0-darwin-amd64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmDarwinUrl)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmDarwinUrl
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
       jest.spyOn(os, 'arch').mockReturnValueOnce('arm64')
-      const helmDarwinArm64Url =
-         'https://get.helm.sh/helm-v3.8.0-darwin-arm64.zip'
+      const helmDarwinArm64Url = 'https://test.tld/helm-v3.8.0-darwin-arm64.zip'
 
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmDarwinArm64Url)
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmDarwinArm64Url
+      )
       expect(os.type).toBeCalled()
       expect(os.arch).toBeCalled()
    })
@@ -65,10 +75,14 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Windows', () => {
+      const downloadBaseURL = 'https://test.tld'
+
       jest.spyOn(os, 'type').mockReturnValue('Windows_NT')
 
-      const helmWindowsUrl = 'https://get.helm.sh/helm-v3.8.0-windows-amd64.zip'
-      expect(run.getHelmDownloadURL('v3.8.0')).toBe(helmWindowsUrl)
+      const helmWindowsUrl = 'https://test.tld/helm-v3.8.0-windows-amd64.zip'
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
+         helmWindowsUrl
+      )
       expect(os.type).toBeCalled()
    })
 
@@ -193,12 +207,14 @@ describe('run.ts', () => {
          return {isDirectory: () => isDirectory} as fs.Stats
       })
 
-      expect(await run.downloadHelm('v4.0.0')).toBe(
+      const baseURL = 'https://test.tld'
+
+      expect(await run.downloadHelm(baseURL, 'v4.0.0')).toBe(
          path.join('pathToCachedDir', 'helm.exe')
       )
       expect(toolCache.find).toBeCalledWith('helm', 'v4.0.0')
       expect(toolCache.downloadTool).toBeCalledWith(
-         'https://get.helm.sh/helm-v4.0.0-windows-amd64.zip'
+         'https://test.tld/helm-v4.0.0-windows-amd64.zip'
       )
       expect(fs.chmodSync).toBeCalledWith('pathToTool', '777')
       expect(toolCache.extractZip).toBeCalledWith('pathToTool')
@@ -215,12 +231,14 @@ describe('run.ts', () => {
       })
       jest.spyOn(os, 'type').mockReturnValue('Windows_NT')
 
-      await expect(run.downloadHelm('v3.2.1')).rejects.toThrow(
-         'Failed to download Helm from location https://get.helm.sh/helm-v3.2.1-windows-amd64.zip'
+      const baseURL = 'https://test.tld'
+
+      await expect(run.downloadHelm(baseURL, 'v3.2.1')).rejects.toThrow(
+         'Failed to download Helm from location https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
       expect(toolCache.find).toBeCalledWith('helm', 'v3.2.1')
       expect(toolCache.downloadTool).toBeCalledWith(
-         'https://get.helm.sh/helm-v3.2.1-windows-amd64.zip'
+         'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
    })
 
@@ -228,7 +246,9 @@ describe('run.ts', () => {
       jest.spyOn(toolCache, 'find').mockReturnValue('pathToCachedDir')
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
 
-      expect(await run.downloadHelm('v3.2.1')).toBe(
+      const baseURL = 'https://test.tld'
+
+      expect(await run.downloadHelm(baseURL, 'v3.2.1')).toBe(
          path.join('pathToCachedDir', 'helm.exe')
       )
       expect(toolCache.find).toBeCalledWith('helm', 'v3.2.1')
@@ -254,12 +274,14 @@ describe('run.ts', () => {
          return {isDirectory: () => isDirectory} as fs.Stats
       })
 
-      await expect(run.downloadHelm('v3.2.1')).rejects.toThrow(
+      const baseURL = 'https://test.tld'
+
+      await expect(run.downloadHelm(baseURL, 'v3.2.1')).rejects.toThrow(
          'Helm executable not found in path pathToCachedDir'
       )
       expect(toolCache.find).toBeCalledWith('helm', 'v3.2.1')
       expect(toolCache.downloadTool).toBeCalledWith(
-         'https://get.helm.sh/helm-v3.2.1-windows-amd64.zip'
+         'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
       expect(fs.chmodSync).toBeCalledWith('pathToTool', '777')
       expect(toolCache.extractZip).toBeCalledWith('pathToTool')
