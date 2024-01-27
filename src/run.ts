@@ -12,7 +12,7 @@ import * as core from '@actions/core'
 import * as http from '@actions/http-client'
 
 const helmToolName = 'helm'
-const stableHelmVersion = 'v3.11.1'
+const stableHelmVersion = 'v3.13.3'
 
 export async function run() {
    let version = core.getInput('version', {required: true})
