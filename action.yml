@@ -6,8 +6,9 @@ inputs:
       required: true
       default: 'latest'
    token:
-      description: GitHub token. Required only if 'version' == 'latest'
+      description: GitHub token.
       required: false
+      deprecationMessage: 'This input is deprecated. Action does not require a token anymore.'
    downloadBaseURL:
       description: 'Set the download base URL'
       required: false
@@ -18,5 +19,5 @@ outputs:
 branding:
    color: 'blue'
 runs:
-   using: 'node16'
+   using: 'node20'
    main: 'lib/index.js'
