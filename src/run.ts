@@ -9,8 +9,7 @@ import * as fs from 'fs'
 
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
-import {graphql} from '@octokit/graphql'
-import {createActionAuth} from '@octokit/auth-action'
+import * as http from '@actions/http-client'
 
 const helmToolName = 'helm'
 const stableHelmVersion = 'v3.11.1'
@@ -52,43 +51,17 @@ export function getValidVersion(version: string): string {
 // Gets the latest helm version or returns a default stable if getting latest fails
 export async function getLatestHelmVersion(): Promise<string> {
    try {
-      const auth = createActionAuth()
-      const graphqlAuthenticated = graphql.defaults({
-         request: {hook: auth.hook}
-      })
-      const {repository} = await graphqlAuthenticated(
-         `
-            {
-               repository(name: "helm", owner: "helm") {
-                  releases(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
-                     nodes {
-                        tagName
-                        isLatest
-                        isDraft
-                        isPrerelease
-                     }
-                  }
-               }
-            }
-         `
+      const httpClient = new http.HttpClient()
+      const response = await httpClient.getJson<any>(
+         'https://github.com/helm/helm/releases/latest'
       )
-      const latestValidRelease: string = repository.releases.nodes.find(
-         ({tagName, isLatest, isDraft, isPreRelease}) =>
-            isValidVersion(tagName) && isLatest && !isDraft && !isPreRelease
-      )?.tagName
-
-      if (latestValidRelease) return latestValidRelease
+      return response.result.tag_name
    } catch (err) {
       core.warning(
          `Error while fetching latest Helm release: ${err.toString()}. Using default version ${stableHelmVersion}`
       )
       return stableHelmVersion
    }
-
-   core.warning(
-      `Could not find valid release. Using default version ${stableHelmVersion}`
-   )
-   return stableHelmVersion
 }
 
 // isValidVersion checks if verison is a stable release

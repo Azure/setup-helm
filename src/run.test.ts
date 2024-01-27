@@ -86,8 +86,8 @@ describe('run.ts', () => {
       expect(os.type).toBeCalled()
    })
 
-   test('getLatestHelmVersion() - return the stable version of HELM since its not authenticated', async () => {
-      expect(await run.getLatestHelmVersion()).toBe('v3.11.1')
+   test('getLatestHelmVersion() - check that returned value matches helm version regex', async () => {
+      expect(await run.getLatestHelmVersion()).toMatch(/^v\d+\.\d+\.\d+$/)
    })
 
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {
