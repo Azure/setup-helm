@@ -9,7 +9,7 @@ import * as fs from 'fs'
 
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
-import * as http from '@actions/http-client'
+import {Octokit} from '@octokit/action'
 
 const helmToolName = 'helm'
 const stableHelmVersion = 'v3.13.3'
@@ -51,17 +51,33 @@ export function getValidVersion(version: string): string {
 // Gets the latest helm version or returns a default stable if getting latest fails
 export async function getLatestHelmVersion(): Promise<string> {
    try {
-      const httpClient = new http.HttpClient()
-      const response = await httpClient.getJson<any>(
-         'https://github.com/helm/helm/releases/latest'
-      )
-      return response.result.tag_name
+      const octokit = new Octokit()
+      const response = await octokit.rest.repos.listReleases({
+         owner: 'helm',
+         repo: 'helm',
+         per_page: 100,
+         order: 'desc',
+         sort: 'created'
+      })
+
+      const releases = response.data
+      const latestValidRelease: string = releases.find(
+         ({tag_name, draft, prerelease}) =>
+            isValidVersion(tag_name) && !draft && !prerelease
+      )?.tag_name
+
+      if (latestValidRelease) return latestValidRelease
    } catch (err) {
       core.warning(
          `Error while fetching latest Helm release: ${err.toString()}. Using default version ${stableHelmVersion}`
       )
       return stableHelmVersion
    }
+
+   core.warning(
+      `Could not find valid release. Using default version ${stableHelmVersion}`
+   )
+   return stableHelmVersion
 }
 
 // isValidVersion checks if verison is a stable release

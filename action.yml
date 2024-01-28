@@ -6,9 +6,8 @@ inputs:
       required: true
       default: 'latest'
    token:
-      description: GitHub token.
+      description: GitHub token. Required only if 'version' == 'latest'
       required: false
-      deprecationMessage: 'This input is deprecated. Action does not require a token anymore.'
    downloadBaseURL:
       description: 'Set the download base URL'
       required: false
