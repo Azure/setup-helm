@@ -63,3 +63,25 @@ jobs:
               else
                 echo "HELM VERSION $HELM_3_5_0 INSTALLED SUCCESSFULLY"
               fi
+         - name: Setup helm latest version
+           uses: ./
+           with:
+              version: latest
+              token: ${{ secrets.GITHUB_TOKEN }}
+         - name: Validate latest
+           env:
+              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+           run: |
+              HELM_LATEST=$(gh release list \
+                --repo helm/helm \
+                --exclude-drafts \
+                --exclude-pre-releases \
+                --limit 1 | awk '{print $4}')
+
+              if [[ $(helm version) != *$HELM_LATEST* ]]; then
+                echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN $HELM_LATEST"
+                echo "HELM VERSION OUTPUT: $(helm version)"
+                exit 1
+              else
+                echo "HELM VERSION $HELM_LATEST INSTALLED SUCCESSFULLY"
+              fi
