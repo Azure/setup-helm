@@ -10,14 +10,14 @@ describe('run.ts', () => {
       jest.spyOn(os, 'type').mockReturnValue('Windows_NT')
 
       expect(run.getExecutableExtension()).toBe('.exe')
-      expect(os.type).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
    })
 
    test('getExecutableExtension() - return empty string for non-windows OS', () => {
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
 
       expect(run.getExecutableExtension()).toBe('')
-      expect(os.type).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Linux', () => {
@@ -30,8 +30,8 @@ describe('run.ts', () => {
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
          helmLinuxUrl
       )
-      expect(os.type).toBeCalled()
-      expect(os.arch).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
+      expect(os.arch).toHaveBeenCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Linux')
@@ -41,8 +41,8 @@ describe('run.ts', () => {
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
          helmLinuxArm64Url
       )
-      expect(os.type).toBeCalled()
-      expect(os.arch).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
+      expect(os.arch).toHaveBeenCalled()
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Darwin', () => {
@@ -55,8 +55,8 @@ describe('run.ts', () => {
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
          helmDarwinUrl
       )
-      expect(os.type).toBeCalled()
-      expect(os.arch).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
+      expect(os.arch).toHaveBeenCalled()
 
       // arm64
       jest.spyOn(os, 'type').mockReturnValue('Darwin')
@@ -66,8 +66,8 @@ describe('run.ts', () => {
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
          helmDarwinArm64Url
       )
-      expect(os.type).toBeCalled()
-      expect(os.arch).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
+      expect(os.arch).toHaveBeenCalled()
    })
 
    test('getValidVersion() - return version with v prepended', () => {
@@ -83,11 +83,11 @@ describe('run.ts', () => {
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(
          helmWindowsUrl
       )
-      expect(os.type).toBeCalled()
+      expect(os.type).toHaveBeenCalled()
    })
 
    test('getLatestHelmVersion() - return the stable version of HELM since its not authenticated', async () => {
-      expect(await run.getLatestHelmVersion()).toBe('v3.11.1')
+      expect(await run.getLatestHelmVersion()).toBe('v3.13.3')
    })
 
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {
@@ -120,8 +120,8 @@ describe('run.ts', () => {
       expect(run.walkSync('mainFolder', null, 'file21')).toEqual([
          path.join('mainFolder', 'folder2', 'file21')
       ])
-      expect(fs.readdirSync).toBeCalledTimes(3)
-      expect(fs.statSync).toBeCalledTimes(8)
+      expect(fs.readdirSync).toHaveBeenCalledTimes(3)
+      expect(fs.statSync).toHaveBeenCalledTimes(8)
    })
 
    test('walkSync() - return empty array if no file with name fileToFind exists', () => {
@@ -152,8 +152,8 @@ describe('run.ts', () => {
       })
 
       expect(run.walkSync('mainFolder', null, 'helm.exe')).toEqual([])
-      expect(fs.readdirSync).toBeCalledTimes(3)
-      expect(fs.statSync).toBeCalledTimes(8)
+      expect(fs.readdirSync).toHaveBeenCalledTimes(3)
+      expect(fs.statSync).toHaveBeenCalledTimes(8)
    })
 
    test('findHelm() - change access permissions and find the helm in given directory', () => {
@@ -212,13 +212,13 @@ describe('run.ts', () => {
       expect(await run.downloadHelm(baseURL, 'v4.0.0')).toBe(
          path.join('pathToCachedDir', 'helm.exe')
       )
-      expect(toolCache.find).toBeCalledWith('helm', 'v4.0.0')
-      expect(toolCache.downloadTool).toBeCalledWith(
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v4.0.0')
+      expect(toolCache.downloadTool).toHaveBeenCalledWith(
          'https://test.tld/helm-v4.0.0-windows-amd64.zip'
       )
-      expect(fs.chmodSync).toBeCalledWith('pathToTool', '777')
-      expect(toolCache.extractZip).toBeCalledWith('pathToTool')
-      expect(fs.chmodSync).toBeCalledWith(
+      expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '777')
+      expect(toolCache.extractZip).toHaveBeenCalledWith('pathToTool')
+      expect(fs.chmodSync).toHaveBeenCalledWith(
          path.join('pathToCachedDir', 'helm.exe'),
          '777'
       )
@@ -236,8 +236,8 @@ describe('run.ts', () => {
       await expect(run.downloadHelm(baseURL, 'v3.2.1')).rejects.toThrow(
          'Failed to download Helm from location https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
-      expect(toolCache.find).toBeCalledWith('helm', 'v3.2.1')
-      expect(toolCache.downloadTool).toBeCalledWith(
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
+      expect(toolCache.downloadTool).toHaveBeenCalledWith(
          'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
    })
@@ -251,8 +251,8 @@ describe('run.ts', () => {
       expect(await run.downloadHelm(baseURL, 'v3.2.1')).toBe(
          path.join('pathToCachedDir', 'helm.exe')
       )
-      expect(toolCache.find).toBeCalledWith('helm', 'v3.2.1')
-      expect(fs.chmodSync).toBeCalledWith(
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
+      expect(fs.chmodSync).toHaveBeenCalledWith(
          path.join('pathToCachedDir', 'helm.exe'),
          '777'
       )
@@ -279,11 +279,11 @@ describe('run.ts', () => {
       await expect(run.downloadHelm(baseURL, 'v3.2.1')).rejects.toThrow(
          'Helm executable not found in path pathToCachedDir'
       )
-      expect(toolCache.find).toBeCalledWith('helm', 'v3.2.1')
-      expect(toolCache.downloadTool).toBeCalledWith(
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
+      expect(toolCache.downloadTool).toHaveBeenCalledWith(
          'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
-      expect(fs.chmodSync).toBeCalledWith('pathToTool', '777')
-      expect(toolCache.extractZip).toBeCalledWith('pathToTool')
+      expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '777')
+      expect(toolCache.extractZip).toHaveBeenCalledWith('pathToTool')
    })
 })

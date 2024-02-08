@@ -9,11 +9,10 @@ import * as fs from 'fs'
 
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
-import {graphql} from '@octokit/graphql'
-import {createActionAuth} from '@octokit/auth-action'
+import {Octokit} from '@octokit/action'
 
 const helmToolName = 'helm'
-const stableHelmVersion = 'v3.11.1'
+const stableHelmVersion = 'v3.13.3'
 
 export async function run() {
    let version = core.getInput('version', {required: true})
@@ -52,30 +51,20 @@ export function getValidVersion(version: string): string {
 // Gets the latest helm version or returns a default stable if getting latest fails
 export async function getLatestHelmVersion(): Promise<string> {
    try {
-      const auth = createActionAuth()
-      const graphqlAuthenticated = graphql.defaults({
-         request: {hook: auth.hook}
+      const octokit = new Octokit()
+      const response = await octokit.rest.repos.listReleases({
+         owner: 'helm',
+         repo: 'helm',
+         per_page: 100,
+         order: 'desc',
+         sort: 'created'
       })
-      const {repository} = await graphqlAuthenticated(
-         `
-            {
-               repository(name: "helm", owner: "helm") {
-                  releases(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
-                     nodes {
-                        tagName
-                        isLatest
-                        isDraft
-                        isPrerelease
-                     }
-                  }
-               }
-            }
-         `
-      )
-      const latestValidRelease: string = repository.releases.nodes.find(
-         ({tagName, isLatest, isDraft, isPreRelease}) =>
-            isValidVersion(tagName) && isLatest && !isDraft && !isPreRelease
-      )?.tagName
+
+      const releases = response.data
+      const latestValidRelease: string = releases.find(
+         ({tag_name, draft, prerelease}) =>
+            isValidVersion(tag_name) && !draft && !prerelease
+      )?.tag_name
 
       if (latestValidRelease) return latestValidRelease
    } catch (err) {
