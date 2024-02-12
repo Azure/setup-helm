@@ -13,6 +13,6 @@ jobs:
       permissions:
          actions: read
          contents: write
-      uses: Azure/action-release-workflows/.github/workflows/release_js_project.yaml@e4a1a0385530d6861c9a9b7262058ad33b10c769
+      uses: Azure/action-release-workflows/.github/workflows/release_js_project.yaml@074d812926f43e21038fb170ba2f4bc4e8111503
       with:
          changelogPath: ./CHANGELOG.md
