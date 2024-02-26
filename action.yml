@@ -6,8 +6,9 @@ inputs:
       required: true
       default: 'latest'
    token:
-      description: GitHub token. Required only if 'version' == 'latest'
+      description: GitHub token. Used to be reuired to fetch the latest version
       required: false
+      deprecationMessage: 'GitHub token is no longer required'
       default: '${{ github.token }}'
    downloadBaseURL:
       description: 'Set the download base URL'
