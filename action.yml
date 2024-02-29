@@ -6,7 +6,7 @@ inputs:
       required: true
       default: 'latest'
    token:
-      description: GitHub token. Used to be reuired to fetch the latest version
+      description: GitHub token. Used to be required to fetch the latest version
       required: false
       deprecationMessage: 'GitHub token is no longer required'
       default: '${{ github.token }}'

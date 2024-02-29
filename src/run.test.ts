@@ -87,7 +87,12 @@ describe('run.ts', () => {
    })
 
    test('getLatestHelmVersion() - return the latest version of HELM', async () => {
-      expect(await run.getLatestHelmVersion()).toBe('v3.14.2')
+      const res = {
+         status: 200,
+         text: async () => 'v9.99.999'
+      } as Response
+      global.fetch = jest.fn().mockReturnValue(res)
+      expect(await run.getLatestHelmVersion()).toBe('v9.99.999')
    })
 
    test('getLatestHelmVersion() - return the stable version of HELM when simulating a network error', async () => {
