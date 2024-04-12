@@ -61,41 +61,24 @@ export async function getLatestHelmVersion(): Promise<string> {
    }
 }
 
-export function getExecutableExtension(): string {
-   if (os.type().match(/^Win/)) {
-      return '.exe'
-   }
-   return ''
+export function getArch(): string {
+   return os.arch() === 'x64' ? 'amd64' : os.arch()
 }
 
-const LINUX = 'Linux'
-const MAC_OS = 'Darwin'
-const WINDOWS = 'Windows_NT'
-const ARM64 = 'arm64'
+export function getPlatform(): string {
+   return os.platform() === 'win32' ? 'windows' : os.platform()
+}
+
+export function getArchiveExtension(): string {
+   return os.platform() === 'win32' ? 'zip' : 'tar.gz'
+}
+
+export function getExecutableExtension(): string {
+   return os.platform() === 'win32' ? '.exe' : ''
+}
+
 export function getHelmDownloadURL(baseURL: string, version: string): string {
-   const arch = os.arch()
-   const operatingSystem = os.type()
-
-   let urlPath = ''
-
-   switch (true) {
-      case operatingSystem == LINUX && arch == ARM64:
-         urlPath = util.format(`/helm-%s-linux-arm64.zip`, version)
-         break
-      case operatingSystem == LINUX:
-         urlPath = util.format(`/helm-%s-linux-amd64.zip`, version)
-         break
-      case operatingSystem == MAC_OS && arch == ARM64:
-         urlPath = util.format(`/helm-%s-darwin-arm64.zip`, version)
-         break
-      case operatingSystem == MAC_OS:
-         urlPath = util.format(`/helm-%s-darwin-amd64.zip`, version)
-         break
-      case operatingSystem == WINDOWS:
-      default:
-         urlPath = util.format(`/helm-%s-windows-amd64.zip`, version)
-   }
-
+   const urlPath = `helm-${version}-${getPlatform()}-${getArch()}.${getArchiveExtension()}`
    const url = new URL(urlPath, baseURL)
    return url.toString()
 }
@@ -121,9 +104,13 @@ export async function downloadHelm(
       }
 
       fs.chmodSync(helmDownloadPath, '777')
-      const unzipedHelmPath = await toolCache.extractZip(helmDownloadPath)
+      const extractedPath =
+         getPlatform() === 'windows'
+            ? await toolCache.extractZip(helmDownloadPath)
+            : await toolCache.extractTar(helmDownloadPath)
+
       cachedToolpath = await toolCache.cacheDir(
-         unzipedHelmPath,
+         extractedPath,
          helmToolName,
          version
       )
