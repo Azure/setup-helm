@@ -91,7 +91,7 @@ export async function downloadHelm(
       core.info(`Restoring '${version}' from cache`)
    } else {
       core.info(`Downloading '${version}' from '${baseURL}'`)
-      let helmDownloadPath;
+      let helmDownloadPath
       try {
          helmDownloadPath = await toolCache.downloadTool(
             getHelmDownloadURL(baseURL, version)
