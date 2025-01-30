@@ -155,5 +155,3 @@ export var walkSync = function (dir, filelist, fileToFind) {
    })
    return filelist
 }
-
-run().catch(core.setFailed)
