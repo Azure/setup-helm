@@ -9,14 +9,14 @@
       "@actions/core": "^1.11.1",
       "@actions/exec": "^1.1.1",
       "@actions/io": "^1.1.2",
-      "@actions/tool-cache": "2.0.1",
+      "@actions/tool-cache": "2.0.2",
       "@octokit/action": "^7.0.0",
       "semver": "^7.6.3"
    },
    "main": "lib/index.js",
    "scripts": {
       "prebuild": "npm i ncc",
-      "build": "ncc build src/run.ts -o lib",
+      "build": "ncc build src/index.ts -o lib",
       "test": "jest",
       "test-coverage": "jest --coverage",
       "format": "prettier --write .",
@@ -24,11 +24,11 @@
    },
    "devDependencies": {
       "@types/jest": "^29.5.14",
-      "@types/node": "^22.10.2",
+      "@types/node": "^22.10.10",
       "@vercel/ncc": "^0.38.3",
       "jest": "^29.7.0",
       "prettier": "^3.4.2",
       "ts-jest": "^29.2.5",
-      "typescript": "^5.7.2"
+      "typescript": "^5.7.3"
    }
 }
