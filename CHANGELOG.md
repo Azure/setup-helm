@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.3.0] - 2025-02-15
+
+-  #152 feat: log when restoring from cache
+-  #157 Dependencies Update
+-  #137 Add dependabot
+
 ## [4.2.0] - 2024-04-15
 
 -  #124 Fix OS detection and download OS-native archive extension
