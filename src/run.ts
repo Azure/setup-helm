@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.
-// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 import * as os from 'os'
@@ -26,7 +25,7 @@ export async function run() {
 
    const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
 
-   core.startGroup(`Downloading ${version}`)
+   core.startGroup(`Installing ${version}`)
    const cachedPath = await downloadHelm(downloadBaseURL, version)
    core.endGroup()
 
@@ -88,7 +87,10 @@ export async function downloadHelm(
    version: string
 ): Promise<string> {
    let cachedToolpath = toolCache.find(helmToolName, version)
-   if (!cachedToolpath) {
+   if (cachedToolpath) {
+      core.info(`Restoring '${version}' from cache`)
+   } else {
+      core.info(`Downloading '${version}' from '${baseURL}'`)
       let helmDownloadPath
       try {
          helmDownloadPath = await toolCache.downloadTool(
