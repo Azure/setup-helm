@@ -10,7 +10,7 @@
       "@actions/exec": "^1.1.1",
       "@actions/io": "^1.1.2",
       "@actions/tool-cache": "2.0.2",
-      "@octokit/action": "^7.0.0",
+      "@octokit/action": "^7.0.1",
       "semver": "^7.7.1"
    },
    "main": "lib/index.js",
@@ -24,10 +24,10 @@
    },
    "devDependencies": {
       "@types/jest": "^29.5.14",
-      "@types/node": "^22.13.1",
+      "@types/node": "^22.13.4",
       "@vercel/ncc": "^0.38.3",
       "jest": "^29.7.0",
-      "prettier": "^3.5.0",
+      "prettier": "^3.5.1",
       "ts-jest": "^29.2.5",
       "typescript": "^5.7.3"
    }
