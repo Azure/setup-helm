@@ -166,7 +166,8 @@ describe('run.ts', () => {
    test('findHelm() - change access permissions and find the helm in given directory', () => {
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
       jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
-         if (file == 'mainFolder') return ['helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>]
+         if (file == 'mainFolder')
+            return ['helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>]
          return []
       })
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
@@ -208,7 +209,9 @@ describe('run.ts', () => {
       jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
       jest
          .spyOn(fs, 'readdirSync')
-         .mockImplementation((file, _) => ['helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>])
+         .mockImplementation((file, _) => [
+            'helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+         ])
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
@@ -254,7 +257,9 @@ describe('run.ts', () => {
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
       jest
          .spyOn(fs, 'readdirSync')
-         .mockReturnValue(['helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>])
+         .mockReturnValue([
+            'helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+         ])
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
