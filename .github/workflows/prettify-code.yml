@@ -13,6 +13,4 @@ jobs:
            uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
          - name: Enforce Prettier
-           uses: actionsx/prettier@3d9f7c3fa44c9cb819e68292a328d7f4384be206 # v3
-           with:
-              args: --check .
+           run: npx prettier --check .
