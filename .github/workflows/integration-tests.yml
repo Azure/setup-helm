@@ -19,7 +19,7 @@ jobs:
       env:
          HELM_3_8_0: 'v3.8.0'
          HELM_3_7_2: 'v3.7.2'
-         HELM_NO_V: '3.5.0'
+         HELM_NO_V: '3.8.0'
          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
       steps:
          - name: Check out repository
