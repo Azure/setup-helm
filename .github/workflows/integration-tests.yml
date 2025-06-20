@@ -16,6 +16,7 @@ jobs:
                - windows-11-arm
                - macos-latest # arm
                - macos-13 # x64
+         fail-fast: false
       runs-on: ${{ matrix.os }}
       env:
          HELM_3_8_0: 'v3.8.0'
