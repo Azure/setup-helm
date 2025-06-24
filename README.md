@@ -14,7 +14,7 @@ Acceptable values are latest or any semantic version string like v3.5.0 Use this
 ```
 
 > [!NOTE]
-> If something goes wrong with fetching the latest version the action will use the hardcoded default stable version (currently v3.13.3). If you rely on a certain version higher than the default, you should explicitly use that version instead of latest.
+> If something goes wrong with fetching the latest version the action will use the hardcoded default version (currently v3.18.3). If you rely on a certain version higher than the default, you should explicitly use that version instead of latest.
 
 The cached helm binary path is prepended to the PATH environment variable as well as stored in the helm-path output variable.
 Refer to the action metadata file for details about all the inputs https://github.com/Azure/setup-helm/blob/master/action.yml
