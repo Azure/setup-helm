@@ -20,5 +20,5 @@ outputs:
 branding:
    color: 'blue'
 runs:
-   using: 'node20'
+   using:   'node20'
    main: 'lib/index.js'
