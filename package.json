@@ -15,7 +15,6 @@
    },
    "main": "lib/index.js",
    "scripts": {
-      "prebuild": "npm i ncc",
       "build": "ncc build src/index.ts -o lib",
       "test": "jest",
       "test-coverage": "jest --coverage",
