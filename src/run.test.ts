@@ -88,7 +88,7 @@ describe('run.ts', () => {
    test('getLatestHelmVersion() - return the stable version of HELM when simulating a network error', async () => {
       const errorMessage: string = 'Network Error'
       global.fetch = jest.fn().mockRejectedValueOnce(new Error(errorMessage))
-      expect(await run.getLatestHelmVersion()).toBe('v3.13.3')
+      expect(await run.getLatestHelmVersion()).toBe('v3.18.3')
    })
 
    test('getValidVersion() - return version with v prepended', () => {
