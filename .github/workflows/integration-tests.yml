@@ -76,7 +76,8 @@ jobs:
                 --repo helm/helm \
                 --exclude-drafts \
                 --exclude-pre-releases \
-                --limit 1 | awk '{print $4}')
+                --json name,isLatest \
+                --jq '.[] | select(.isLatest)|.name' | awk '{print $2}'
 
               if [[ $(helm version) != *$HELM_LATEST* ]]; then
                 echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN $HELM_LATEST"
