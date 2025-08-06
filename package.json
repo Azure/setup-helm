@@ -15,20 +15,21 @@
    },
    "main": "lib/index.js",
    "scripts": {
-      "prebuild": "npm i ncc",
       "build": "ncc build src/index.ts -o lib",
       "test": "jest",
       "test-coverage": "jest --coverage",
       "format": "prettier --write .",
-      "format-check": "prettier --check ."
+      "format-check": "prettier --check .",
+      "prepare": "husky"
    },
    "devDependencies": {
       "@types/jest": "^30.0.0",
-      "@types/node": "^24.0.1",
+      "@types/node": "^24.1.0",
       "@vercel/ncc": "^0.38.3",
-      "jest": "^30.0.0",
-      "prettier": "^3.5.3",
-      "ts-jest": "^29.4.0",
-      "typescript": "^5.8.3"
+      "husky": "^9.1.7",
+      "jest": "^30.0.5",
+      "prettier": "^3.6.2",
+      "ts-jest": "^29.4.1",
+      "typescript": "^5.9.2"
    }
 }

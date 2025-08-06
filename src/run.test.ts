@@ -67,11 +67,20 @@ describe('run.ts', () => {
       expect(os.arch).toHaveBeenCalled()
    })
 
-   test('getHelmDownloadURL() - return the URL to download helm for Windows', () => {
+   test('getHelmDownloadURL() - return the URL to download helm for Windows x64', () => {
       jest.spyOn(os, 'platform').mockReturnValue('win32')
       jest.spyOn(os, 'arch').mockReturnValue('x64')
 
       const expected = 'https://test.tld/helm-v3.8.0-windows-amd64.zip'
+      expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
+      expect(os.platform).toHaveBeenCalled()
+   })
+
+   test('getHelmDownloadURL() - return the URL to download helm for Windows arm64', () => {
+      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('arm64')
+
+      const expected = 'https://test.tld/helm-v3.8.0-windows-arm64.zip'
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
       expect(os.platform).toHaveBeenCalled()
    })
@@ -88,7 +97,7 @@ describe('run.ts', () => {
    test('getLatestHelmVersion() - return the stable version of HELM when simulating a network error', async () => {
       const errorMessage: string = 'Network Error'
       global.fetch = jest.fn().mockRejectedValueOnce(new Error(errorMessage))
-      expect(await run.getLatestHelmVersion()).toBe('v3.18.3')
+      expect(await run.getLatestHelmVersion()).toBe(run.stableHelmVersion)
    })
 
    test('getValidVersion() - return version with v prepended', () => {
@@ -204,6 +213,7 @@ describe('run.ts', () => {
       const response = JSON.stringify([{tag_name: 'v4.0.0'}])
       jest.spyOn(fs, 'readFileSync').mockReturnValue(response)
       jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
       jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
       jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
@@ -239,6 +249,7 @@ describe('run.ts', () => {
          throw 'Unable to download'
       })
       jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
 
       const downloadUrl = 'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       await expect(run.downloadHelm(downloadBaseURL, 'v3.2.1')).rejects.toThrow(
@@ -254,6 +265,7 @@ describe('run.ts', () => {
       jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
       jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
       jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
       jest
          .spyOn(fs, 'readdirSync')
@@ -283,6 +295,7 @@ describe('run.ts', () => {
       jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
       jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
       jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
       jest.spyOn(fs, 'chmodSync').mockImplementation()
       jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => [])
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
