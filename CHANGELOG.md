@@ -2,6 +2,8 @@
 
 ## [4.3.1] - 2025-08-12
 
+### Changed
+
 - #167 [Pinning Action Dependencies for Security and Reliability](https://github.com/Azure/setup-helm/pull/167)
 - #181 [Fix types, and update node version.](https://github.com/Azure/setup-helm/pull/181)
 - #191 [chore(tests): Mock arch to make tests pass on arm host](https://github.com/Azure/setup-helm/pull/191)
