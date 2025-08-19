@@ -1,5 +1,20 @@
 # Change Log
 
+## [4.3.1] - 2025-08-12
+
+### Changed
+
+- #167 [Pinning Action Dependencies for Security and Reliability](https://github.com/Azure/setup-helm/pull/167)
+- #181 [Fix types, and update node version.](https://github.com/Azure/setup-helm/pull/181)
+- #191 [chore(tests): Mock arch to make tests pass on arm host](https://github.com/Azure/setup-helm/pull/191)
+- #192 [chore: remove unnecessary prebuild script](https://github.com/Azure/setup-helm/pull/192)
+- #203 [Update helm version retrieval to use JSON output for latest version](https://github.com/Azure/setup-helm/pull/203)
+- #207 [ci(workflows): update helm version to v3.18.4 and add matrix for tests](https://github.com/Azure/setup-helm/pull/207)
+
+### Added
+
+- #197 [Add pre-commit hook](https://github.com/Azure/setup-helm/pull/197)
+
 ## [4.3.0] - 2025-02-15
 
 - #152 feat: log when restoring from cache
