@@ -24,7 +24,7 @@
    },
    "devDependencies": {
       "@types/jest": "^30.0.0",
-      "@types/node": "^24.2.1",
+      "@types/node": "^24.3.0",
       "@vercel/ncc": "^0.38.3",
       "husky": "^9.1.7",
       "jest": "^30.0.5",
