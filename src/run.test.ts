@@ -108,20 +108,20 @@ describe('run.ts', () => {
       jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
          if (file == 'mainFolder')
             return [
-               'file1' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'file2' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'folder1' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'folder2' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+               'file1' as unknown as fs.Dirent<NonSharedBuffer>,
+               'file2' as unknown as fs.Dirent<NonSharedBuffer>,
+               'folder1' as unknown as fs.Dirent<NonSharedBuffer>,
+               'folder2' as unknown as fs.Dirent<NonSharedBuffer>
             ]
          if (file == path.join('mainFolder', 'folder1'))
             return [
-               'file11' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'file12' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+               'file11' as unknown as fs.Dirent<NonSharedBuffer>,
+               'file12' as unknown as fs.Dirent<NonSharedBuffer>
             ]
          if (file == path.join('mainFolder', 'folder2'))
             return [
-               'file21' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'file22' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+               'file21' as unknown as fs.Dirent<NonSharedBuffer>,
+               'file22' as unknown as fs.Dirent<NonSharedBuffer>
             ]
          return []
       })
@@ -143,20 +143,20 @@ describe('run.ts', () => {
       jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
          if (file == 'mainFolder')
             return [
-               'file1' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'file2' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'folder1' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'folder2' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+               'file1' as unknown as fs.Dirent<NonSharedBuffer>,
+               'file2' as unknown as fs.Dirent<NonSharedBuffer>,
+               'folder1' as unknown as fs.Dirent<NonSharedBuffer>,
+               'folder2' as unknown as fs.Dirent<NonSharedBuffer>
             ]
          if (file == path.join('mainFolder', 'folder1'))
             return [
-               'file11' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'file12' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+               'file11' as unknown as fs.Dirent<NonSharedBuffer>,
+               'file12' as unknown as fs.Dirent<NonSharedBuffer>
             ]
          if (file == path.join('mainFolder', 'folder2'))
             return [
-               'file21' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>,
-               'file22' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+               'file21' as unknown as fs.Dirent<NonSharedBuffer>,
+               'file22' as unknown as fs.Dirent<NonSharedBuffer>
             ]
          return []
       })
@@ -176,7 +176,7 @@ describe('run.ts', () => {
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
       jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
          if (file == 'mainFolder')
-            return ['helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>]
+            return ['helm.exe' as unknown as fs.Dirent<NonSharedBuffer>]
          return []
       })
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
@@ -220,7 +220,7 @@ describe('run.ts', () => {
       jest
          .spyOn(fs, 'readdirSync')
          .mockImplementation((file, _) => [
-            'helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+            'helm.exe' as unknown as fs.Dirent<NonSharedBuffer>
          ])
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
          const isDirectory =
@@ -269,9 +269,7 @@ describe('run.ts', () => {
       jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
       jest
          .spyOn(fs, 'readdirSync')
-         .mockReturnValue([
-            'helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
-         ])
+         .mockReturnValue(['helm.exe' as unknown as fs.Dirent<NonSharedBuffer>])
       jest.spyOn(fs, 'statSync').mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
