@@ -24,9 +24,16 @@ export async function run() {
    }
 
    const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
+   const downloadBaseURLFallback = core.getInput('downloadBaseURLFallback', {
+      required: false
+   })
 
    core.startGroup(`Installing ${version}`)
-   const cachedPath = await downloadHelm(downloadBaseURL, version)
+   const cachedPath = await downloadHelm(
+      downloadBaseURL,
+      version,
+      downloadBaseURLFallback
+   )
    core.endGroup()
 
    try {
@@ -84,7 +91,8 @@ export function getHelmDownloadURL(baseURL: string, version: string): string {
 
 export async function downloadHelm(
    baseURL: string,
-   version: string
+   version: string,
+   fallbackBaseURL?: string
 ): Promise<string> {
    let cachedToolpath = toolCache.find(helmToolName, version)
    if (cachedToolpath) {
@@ -97,12 +105,33 @@ export async function downloadHelm(
             getHelmDownloadURL(baseURL, version)
          )
       } catch (exception) {
-         throw new Error(
-            `Failed to download Helm from location ${getHelmDownloadURL(
-               baseURL,
-               version
-            )}`
-         )
+         if (fallbackBaseURL) {
+            core.warning(
+               `Failed to download Helm from location ${getHelmDownloadURL(
+                  baseURL,
+                  version
+               )}. Attempting to download from fallback URL: ${fallbackBaseURL}`
+            )
+            try {
+               helmDownloadPath = await toolCache.downloadTool(
+                  getHelmDownloadURL(fallbackBaseURL, version)
+               )
+            } catch (fallbackException) {
+               throw new Error(
+                  `Failed to download Helm from location ${getHelmDownloadURL(
+                     baseURL,
+                     version
+                  )} or ${getHelmDownloadURL(fallbackBaseURL, version)}`
+               )
+            }
+         } else {
+            throw new Error(
+               `Failed to download Helm from location ${getHelmDownloadURL(
+                  baseURL,
+                  version
+               )}`
+            )
+         }
       }
 
       fs.chmodSync(helmDownloadPath, '777')

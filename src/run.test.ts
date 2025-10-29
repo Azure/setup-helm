@@ -228,7 +228,7 @@ describe('run.ts', () => {
          return {isDirectory: () => isDirectory} as fs.Stats
       })
 
-      expect(await run.downloadHelm(downloadBaseURL, 'v4.0.0')).toBe(
+      expect(await run.downloadHelm(downloadBaseURL, 'v4.0.0', '')).toBe(
          path.join('pathToCachedDir', 'helm.exe')
       )
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v4.0.0')
@@ -252,9 +252,9 @@ describe('run.ts', () => {
       jest.spyOn(os, 'arch').mockReturnValue('x64')
 
       const downloadUrl = 'https://test.tld/helm-v3.2.1-windows-amd64.zip'
-      await expect(run.downloadHelm(downloadBaseURL, 'v3.2.1')).rejects.toThrow(
-         `Failed to download Helm from location ${downloadUrl}`
-      )
+      await expect(
+         run.downloadHelm(downloadBaseURL, 'v3.2.1', '')
+      ).rejects.toThrow(`Failed to download Helm from location ${downloadUrl}`)
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
       expect(toolCache.downloadTool).toHaveBeenCalledWith(`${downloadUrl}`)
    })
@@ -278,7 +278,7 @@ describe('run.ts', () => {
          return {isDirectory: () => isDirectory} as fs.Stats
       })
 
-      expect(await run.downloadHelm(downloadBaseURL, 'v3.2.1')).toBe(
+      expect(await run.downloadHelm(downloadBaseURL, 'v3.2.1', '')).toBe(
          path.join('pathToCachedDir', 'helm.exe')
       )
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
@@ -304,14 +304,96 @@ describe('run.ts', () => {
          return {isDirectory: () => isDirectory} as fs.Stats
       })
 
-      await expect(run.downloadHelm(downloadBaseURL, 'v3.2.1')).rejects.toThrow(
-         'Helm executable not found in path pathToCachedDir'
-      )
+      await expect(
+         run.downloadHelm(downloadBaseURL, 'v3.2.1', '')
+      ).rejects.toThrow('Helm executable not found in path pathToCachedDir')
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
       expect(toolCache.downloadTool).toHaveBeenCalledWith(
          'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
       expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '777')
       expect(toolCache.extractZip).toHaveBeenCalledWith('pathToTool')
+   })
+
+   test('downloadHelm() - use fallback URL when primary download fails', async () => {
+      const fallbackBaseURL = 'https://fallback.tld'
+      jest.spyOn(toolCache, 'find').mockReturnValue('')
+      jest
+         .spyOn(toolCache, 'downloadTool')
+         .mockRejectedValueOnce(new Error('Primary download failed'))
+         .mockResolvedValueOnce('pathToTool')
+      jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
+      jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
+      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
+      jest.spyOn(fs, 'chmodSync').mockImplementation()
+      jest.spyOn(core, 'warning').mockImplementation()
+      jest
+         .spyOn(fs, 'readdirSync')
+         .mockImplementation((file, _) => [
+            'helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+         ])
+      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+         const isDirectory =
+            (file as string).indexOf('folder') == -1 ? false : true
+         return {isDirectory: () => isDirectory} as fs.Stats
+      })
+
+      expect(
+         await run.downloadHelm(downloadBaseURL, 'v3.2.1', fallbackBaseURL)
+      ).toBe(path.join('pathToCachedDir', 'helm.exe'))
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(2)
+      expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
+         1,
+         'https://test.tld/helm-v3.2.1-windows-amd64.zip'
+      )
+      expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
+         2,
+         'https://fallback.tld/helm-v3.2.1-windows-amd64.zip'
+      )
+      expect(core.warning).toHaveBeenCalled()
+   })
+
+   test('downloadHelm() - throw error if both primary and fallback downloads fail', async () => {
+      const fallbackBaseURL = 'https://fallback.tld'
+      jest.spyOn(toolCache, 'find').mockReturnValue('')
+      jest
+         .spyOn(toolCache, 'downloadTool')
+         .mockRejectedValueOnce(new Error('Primary download failed'))
+         .mockRejectedValueOnce(new Error('Fallback download failed'))
+      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
+
+      await expect(
+         run.downloadHelm(downloadBaseURL, 'v3.2.1', fallbackBaseURL)
+      ).rejects.toThrow(
+         'Failed to download Helm from location https://test.tld/helm-v3.2.1-windows-amd64.zip or https://fallback.tld/helm-v3.2.1-windows-amd64.zip'
+      )
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(2)
+   })
+
+   test('downloadHelm() - work without fallback URL (backwards compatibility)', async () => {
+      jest.spyOn(toolCache, 'find').mockReturnValue('')
+      jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
+      jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
+      jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
+      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      jest.spyOn(os, 'arch').mockReturnValue('x64')
+      jest.spyOn(fs, 'chmodSync').mockImplementation()
+      jest
+         .spyOn(fs, 'readdirSync')
+         .mockImplementation((file, _) => [
+            'helm.exe' as unknown as fs.Dirent<Buffer<ArrayBufferLike>>
+         ])
+      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+         const isDirectory =
+            (file as string).indexOf('folder') == -1 ? false : true
+         return {isDirectory: () => isDirectory} as fs.Stats
+      })
+
+      expect(await run.downloadHelm(downloadBaseURL, 'v3.2.1')).toBe(
+         path.join('pathToCachedDir', 'helm.exe')
+      )
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(1)
    })
 })
