@@ -79,12 +79,7 @@ jobs:
            env:
               GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
            run: |
-              HELM_LATEST=$(gh release list \
-                --repo helm/helm \
-                --exclude-drafts \
-                --exclude-pre-releases \
-                --json name,isLatest \
-                --jq '.[] | select(.isLatest)|.name' | awk '{print $2}')
+              HELM_LATEST=$(curl -s https://get.helm.sh/helm-latest-version)
 
               if [[ $(helm version) != *$HELM_LATEST* ]]; then
                 echo "HELM VERSION INCORRECT: HELM VERSION DOES NOT CONTAIN $HELM_LATEST"
