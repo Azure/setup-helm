@@ -13,7 +13,6 @@ jobs:
                - ubuntu-latest
                - ubuntu-24.04-arm
                - macos-latest # arm
-               - macos-13 # x64
          fail-fast: false
       runs-on: ${{ matrix.os }}
       env:
