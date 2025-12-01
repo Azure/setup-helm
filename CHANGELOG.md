@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.4.0] - 2025-10-29
+
+### Added
+
+- Add fallback URL support via optional `downloadBaseURLFallback` input for improved download reliability
+
 ## [4.3.1] - 2025-08-12
 
 ### Changed

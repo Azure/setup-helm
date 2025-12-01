@@ -14,6 +14,10 @@ inputs:
       description: 'Set the download base URL'
       required: false
       default: 'https://get.helm.sh'
+   downloadBaseURLFallback:
+      description: 'Fallback base URL if primary download fails'
+      required: false
+      default: ''
 outputs:
    helm-path:
       description: 'Path to the cached helm binary'
