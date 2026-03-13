@@ -1,8 +1,62 @@
-import * as run from './run'
+import {vi, describe, test, expect, afterEach} from 'vitest'
+import * as path from 'path'
+
+// Mock os module
+vi.mock('os', async (importOriginal) => {
+   const actual = await importOriginal<typeof import('os')>()
+   return {
+      ...actual,
+      platform: vi.fn(),
+      arch: vi.fn()
+   }
+})
+
+// Mock fs module
+vi.mock('fs', async (importOriginal) => {
+   const actual = await importOriginal<typeof import('fs')>()
+   return {
+      ...actual,
+      readdirSync: vi.fn(),
+      statSync: vi.fn(),
+      chmodSync: vi.fn(),
+      readFileSync: vi.fn()
+   }
+})
+
+// Mock @actions/core
+vi.mock('@actions/core', async (importOriginal) => {
+   const actual = await importOriginal<typeof import('@actions/core')>()
+   return {
+      ...actual,
+      getInput: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+      warning: vi.fn(),
+      startGroup: vi.fn(),
+      endGroup: vi.fn(),
+      addPath: vi.fn(),
+      setOutput: vi.fn(),
+      setFailed: vi.fn()
+   }
+})
+
+// Mock @actions/tool-cache
+vi.mock('@actions/tool-cache', async (importOriginal) => {
+   const actual = await importOriginal<typeof import('@actions/tool-cache')>()
+   return {
+      ...actual,
+      find: vi.fn(),
+      downloadTool: vi.fn(),
+      extractZip: vi.fn(),
+      extractTar: vi.fn(),
+      cacheDir: vi.fn()
+   }
+})
+
+import * as run from './run.js'
 import * as os from 'os'
 import * as toolCache from '@actions/tool-cache'
 import * as fs from 'fs'
-import * as path from 'path'
 import * as core from '@actions/core'
 
 describe('run.ts', () => {
@@ -10,26 +64,26 @@ describe('run.ts', () => {
 
    // Cleanup mocks after each test to ensure that subsequent tests are not affected by the mocks.
    afterEach(() => {
-      jest.restoreAllMocks()
+      vi.restoreAllMocks()
    })
 
    test('getExecutableExtension() - return .exe when os is Windows', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      vi.mocked(os.platform).mockReturnValue('win32')
 
       expect(run.getExecutableExtension()).toBe('.exe')
       expect(os.platform).toHaveBeenCalled()
    })
 
    test('getExecutableExtension() - return empty string for non-windows OS', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('darwin')
+      vi.mocked(os.platform).mockReturnValue('darwin')
 
       expect(run.getExecutableExtension()).toBe('')
       expect(os.platform).toHaveBeenCalled()
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Linux amd64', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('linux')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
       const expected = 'https://test.tld/helm-v3.8.0-linux-amd64.tar.gz'
 
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
@@ -38,8 +92,8 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Linux arm64', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('linux')
-      jest.spyOn(os, 'arch').mockReturnValue('arm64')
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('arm64')
       const expected = 'https://test.tld/helm-v3.8.0-linux-arm64.tar.gz'
 
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
@@ -48,8 +102,8 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Darwin x64', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('darwin')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
+      vi.mocked(os.platform).mockReturnValue('darwin')
+      vi.mocked(os.arch).mockReturnValue('x64')
       const expected = 'https://test.tld/helm-v3.8.0-darwin-amd64.tar.gz'
 
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
@@ -58,8 +112,8 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Darwin arm64', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('darwin')
-      jest.spyOn(os, 'arch').mockReturnValue('arm64')
+      vi.mocked(os.platform).mockReturnValue('darwin')
+      vi.mocked(os.arch).mockReturnValue('arm64')
       const expected = 'https://test.tld/helm-v3.8.0-darwin-arm64.tar.gz'
 
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
@@ -68,8 +122,8 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Windows x64', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
+      vi.mocked(os.platform).mockReturnValue('win32')
+      vi.mocked(os.arch).mockReturnValue('x64')
 
       const expected = 'https://test.tld/helm-v3.8.0-windows-amd64.zip'
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
@@ -77,8 +131,8 @@ describe('run.ts', () => {
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Windows arm64', () => {
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
-      jest.spyOn(os, 'arch').mockReturnValue('arm64')
+      vi.mocked(os.platform).mockReturnValue('win32')
+      vi.mocked(os.arch).mockReturnValue('arm64')
 
       const expected = 'https://test.tld/helm-v3.8.0-windows-arm64.zip'
       expect(run.getHelmDownloadURL(downloadBaseURL, 'v3.8.0')).toBe(expected)
@@ -90,13 +144,16 @@ describe('run.ts', () => {
          status: 200,
          text: async () => 'v9.99.999'
       } as Response
-      global.fetch = jest.fn().mockReturnValue(res)
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(res))
       expect(await run.getLatestHelmVersion()).toBe('v9.99.999')
    })
 
    test('getLatestHelmVersion() - return the stable version of HELM when simulating a network error', async () => {
       const errorMessage: string = 'Network Error'
-      global.fetch = jest.fn().mockRejectedValueOnce(new Error(errorMessage))
+      vi.stubGlobal(
+         'fetch',
+         vi.fn().mockRejectedValueOnce(new Error(errorMessage))
+      )
       expect(await run.getLatestHelmVersion()).toBe(run.stableHelmVersion)
    })
 
@@ -105,7 +162,7 @@ describe('run.ts', () => {
    })
 
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {
-      jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
+      vi.mocked(fs.readdirSync).mockImplementation((file, _?) => {
          if (file == 'mainFolder')
             return [
                'file1' as unknown as fs.Dirent<NonSharedBuffer>,
@@ -125,8 +182,7 @@ describe('run.ts', () => {
             ]
          return []
       })
-      jest.spyOn(core, 'debug').mockImplementation()
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          const isDirectory =
             (file as string).toLowerCase().indexOf('file') == -1 ? true : false
          return {isDirectory: () => isDirectory} as fs.Stats
@@ -140,7 +196,7 @@ describe('run.ts', () => {
    })
 
    test('walkSync() - return empty array if no file with name fileToFind exists', () => {
-      jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
+      vi.mocked(fs.readdirSync).mockImplementation((file, _?) => {
          if (file == 'mainFolder')
             return [
                'file1' as unknown as fs.Dirent<NonSharedBuffer>,
@@ -160,8 +216,7 @@ describe('run.ts', () => {
             ]
          return []
       })
-      jest.spyOn(core, 'debug').mockImplementation()
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          const isDirectory =
             (file as string).toLowerCase().indexOf('file') == -1 ? true : false
          return {isDirectory: () => isDirectory} as fs.Stats
@@ -173,18 +228,18 @@ describe('run.ts', () => {
    })
 
    test('findHelm() - change access permissions and find the helm in given directory', () => {
-      jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
-      jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
+      vi.mocked(fs.chmodSync).mockImplementation(() => {})
+      vi.mocked(fs.readdirSync).mockImplementation((file, _?) => {
          if (file == 'mainFolder')
             return ['helm.exe' as unknown as fs.Dirent<NonSharedBuffer>]
          return []
       })
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
          return {isDirectory: () => isDirectory} as fs.Stats
       })
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      vi.mocked(os.platform).mockReturnValue('win32')
 
       expect(run.findHelm('mainFolder')).toBe(
          path.join('mainFolder', 'helm.exe')
@@ -192,15 +247,15 @@ describe('run.ts', () => {
    })
 
    test('findHelm() - throw error if executable not found', () => {
-      jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
-      jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => {
+      vi.mocked(fs.chmodSync).mockImplementation(() => {})
+      vi.mocked(fs.readdirSync).mockImplementation((file, _?) => {
          if (file == 'mainFolder') return []
          return []
       })
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          return {isDirectory: () => true} as fs.Stats
       })
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
+      vi.mocked(os.platform).mockReturnValue('win32')
 
       expect(() => run.findHelm('mainFolder')).toThrow(
          'Helm executable not found in path mainFolder'
@@ -208,21 +263,19 @@ describe('run.ts', () => {
    })
 
    test('downloadHelm() - download helm and return path to it', async () => {
-      jest.spyOn(toolCache, 'find').mockReturnValue('')
-      jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
+      vi.mocked(toolCache.find).mockReturnValue('')
+      vi.mocked(toolCache.downloadTool).mockResolvedValue('pathToTool')
       const response = JSON.stringify([{tag_name: 'v4.0.0'}])
-      jest.spyOn(fs, 'readFileSync').mockReturnValue(response)
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
-      jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
-      jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
-      jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
-      jest
-         .spyOn(fs, 'readdirSync')
-         .mockImplementation((file, _) => [
-            'helm.exe' as unknown as fs.Dirent<NonSharedBuffer>
-         ])
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(fs.readFileSync).mockReturnValue(response)
+      vi.mocked(os.platform).mockReturnValue('win32')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(fs.chmodSync).mockImplementation(() => {})
+      vi.mocked(toolCache.extractZip).mockResolvedValue('extractedPath')
+      vi.mocked(toolCache.cacheDir).mockResolvedValue('pathToCachedDir')
+      vi.mocked(fs.readdirSync).mockImplementation((file, _?) => [
+         'helm.exe' as unknown as fs.Dirent<NonSharedBuffer>
+      ])
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
          return {isDirectory: () => isDirectory} as fs.Stats
@@ -244,12 +297,12 @@ describe('run.ts', () => {
    })
 
    test('downloadHelm() - throw error if unable to download', async () => {
-      jest.spyOn(toolCache, 'find').mockReturnValue('')
-      jest.spyOn(toolCache, 'downloadTool').mockImplementation(async () => {
+      vi.mocked(toolCache.find).mockReturnValue('')
+      vi.mocked(toolCache.downloadTool).mockImplementation(async () => {
          throw 'Unable to download'
       })
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
+      vi.mocked(os.platform).mockReturnValue('win32')
+      vi.mocked(os.arch).mockReturnValue('x64')
 
       const downloadUrl = 'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       await expect(run.downloadHelm(downloadBaseURL, 'v3.2.1')).rejects.toThrow(
@@ -260,17 +313,17 @@ describe('run.ts', () => {
    })
 
    test('downloadHelm() - return path to helm tool with same version from toolCache', async () => {
-      jest.spyOn(toolCache, 'find').mockReturnValue('pathToCachedDir')
-      jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
-      jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
-      jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
-      jest.spyOn(fs, 'chmodSync').mockImplementation(() => {})
-      jest
-         .spyOn(fs, 'readdirSync')
-         .mockReturnValue(['helm.exe' as unknown as fs.Dirent<NonSharedBuffer>])
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(toolCache.find).mockReturnValue('pathToCachedDir')
+      vi.mocked(toolCache.cacheDir).mockResolvedValue('pathToCachedDir')
+      vi.mocked(toolCache.downloadTool).mockResolvedValue('pathToTool')
+      vi.mocked(toolCache.extractZip).mockResolvedValue('extractedPath')
+      vi.mocked(os.platform).mockReturnValue('win32')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(fs.chmodSync).mockImplementation(() => {})
+      vi.mocked(fs.readdirSync).mockReturnValue([
+         'helm.exe' as unknown as fs.Dirent<NonSharedBuffer>
+      ])
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
          return {isDirectory: () => isDirectory} as fs.Stats
@@ -287,16 +340,16 @@ describe('run.ts', () => {
    })
 
    test('downloadHelm() - throw error is helm is not found in path', async () => {
-      jest.spyOn(toolCache, 'find').mockReturnValue('')
-      jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
-      jest.spyOn(toolCache, 'cacheDir').mockResolvedValue('pathToCachedDir')
-      jest.spyOn(toolCache, 'downloadTool').mockResolvedValue('pathToTool')
-      jest.spyOn(toolCache, 'extractZip').mockResolvedValue('extractedPath')
-      jest.spyOn(os, 'platform').mockReturnValue('win32')
-      jest.spyOn(os, 'arch').mockReturnValue('x64')
-      jest.spyOn(fs, 'chmodSync').mockImplementation()
-      jest.spyOn(fs, 'readdirSync').mockImplementation((file, _) => [])
-      jest.spyOn(fs, 'statSync').mockImplementation((file) => {
+      vi.mocked(toolCache.find).mockReturnValue('')
+      vi.mocked(toolCache.downloadTool).mockResolvedValue('pathToTool')
+      vi.mocked(toolCache.cacheDir).mockResolvedValue('pathToCachedDir')
+      vi.mocked(toolCache.downloadTool).mockResolvedValue('pathToTool')
+      vi.mocked(toolCache.extractZip).mockResolvedValue('extractedPath')
+      vi.mocked(os.platform).mockReturnValue('win32')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(fs.chmodSync).mockImplementation(() => {})
+      vi.mocked(fs.readdirSync).mockImplementation((file, _?) => [])
+      vi.mocked(fs.statSync).mockImplementation((file) => {
          const isDirectory =
             (file as string).indexOf('folder') == -1 ? false : true
          return {isDirectory: () => isDirectory} as fs.Stats

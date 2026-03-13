@@ -131,7 +131,7 @@ export async function downloadHelm(
 
 export function findHelm(rootFolder: string): string {
    fs.chmodSync(rootFolder, '777')
-   var filelist: string[] = []
+   let filelist: string[] = []
    walkSync(rootFolder, filelist, helmToolName + getExecutableExtension())
    if (!filelist || filelist.length == 0) {
       throw new Error(
@@ -142,8 +142,8 @@ export function findHelm(rootFolder: string): string {
    }
 }
 
-export var walkSync = function (dir, filelist, fileToFind) {
-   var files = fs.readdirSync(dir)
+export function walkSync(dir, filelist, fileToFind) {
+   const files = fs.readdirSync(dir)
    filelist = filelist || []
    files.forEach(function (file) {
       if (fs.statSync(path.join(dir, file)).isDirectory()) {
