@@ -30,7 +30,7 @@ export async function run() {
    core.endGroup()
 
    try {
-      if (!process.env['PATH'].startsWith(path.dirname(cachedPath))) {
+      if (!process.env['PATH']?.startsWith(path.dirname(cachedPath))) {
          core.addPath(path.dirname(cachedPath))
       }
    } catch {
@@ -54,7 +54,7 @@ export async function getLatestHelmVersion(): Promise<string> {
       return release
    } catch (err) {
       core.warning(
-         `Error while fetching latest Helm release: ${err.toString()}. Using default version ${stableHelmVersion}`
+         `Error while fetching latest Helm release: ${err instanceof Error ? err.message : String(err)}. Using default version ${stableHelmVersion}`
       )
       return stableHelmVersion
    }
