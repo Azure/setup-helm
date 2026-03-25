@@ -54,7 +54,7 @@ export async function getLatestHelmVersion(): Promise<string> {
       return release
    } catch (err) {
       core.warning(
-         `Error while fetching latest Helm release: ${err instanceof Error ? err.message : String(err)}. Using default version ${stableHelmVersion}`
+         `Error while fetching latest Helm release: ${err instanceof Error ? err.toString() : String(err)}. Using default version ${stableHelmVersion}`
       )
       return stableHelmVersion
    }
