@@ -105,7 +105,7 @@ export async function downloadHelm(
          )
       }
 
-      fs.chmodSync(helmDownloadPath, '777')
+      fs.chmodSync(helmDownloadPath, '755')
       const extractedPath =
          getPlatform() === 'windows'
             ? await toolCache.extractZip(helmDownloadPath)
@@ -125,12 +125,12 @@ export async function downloadHelm(
       )
    }
 
-   fs.chmodSync(helmpath, '777')
+   fs.chmodSync(helmpath, '755')
    return helmpath
 }
 
 export function findHelm(rootFolder: string): string {
-   fs.chmodSync(rootFolder, '777')
+   fs.chmodSync(rootFolder, '755')
    let filelist: string[] = []
    walkSync(rootFolder, filelist, helmToolName + getExecutableExtension())
    if (!filelist || filelist.length == 0) {

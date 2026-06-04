@@ -288,11 +288,11 @@ describe('run.ts', () => {
       expect(toolCache.downloadTool).toHaveBeenCalledWith(
          'https://test.tld/helm-v4.0.0-windows-amd64.zip'
       )
-      expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '777')
+      expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '755')
       expect(toolCache.extractZip).toHaveBeenCalledWith('pathToTool')
       expect(fs.chmodSync).toHaveBeenCalledWith(
          path.join('pathToCachedDir', 'helm.exe'),
-         '777'
+         '755'
       )
    })
 
@@ -335,7 +335,7 @@ describe('run.ts', () => {
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
       expect(fs.chmodSync).toHaveBeenCalledWith(
          path.join('pathToCachedDir', 'helm.exe'),
-         '777'
+         '755'
       )
    })
 
@@ -362,7 +362,7 @@ describe('run.ts', () => {
       expect(toolCache.downloadTool).toHaveBeenCalledWith(
          'https://test.tld/helm-v3.2.1-windows-amd64.zip'
       )
-      expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '777')
+      expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '755')
       expect(toolCache.extractZip).toHaveBeenCalledWith('pathToTool')
    })
 })
