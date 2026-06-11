@@ -13,6 +13,23 @@ Acceptable values are latest or any semantic version string like v3.5.0 Use this
   id: install
 ```
 
+Alternatively, the version can be read from a [`.tool-versions`](https://asdf-vm.com/manage/configuration.html) file (the format used by [asdf](https://asdf-vm.com/) and [mise](https://mise.jdx.dev/)) via the `version-file` input:
+
+```yaml
+- uses: azure/setup-helm@v5.0.0
+  with:
+     version-file: .tool-versions
+  id: install
+```
+
+The action reads the version declared for the `helm` tool, for example:
+
+```
+helm 3.18.4
+```
+
+If both `version` and `version-file` are set, `version` takes precedence.
+
 > [!NOTE]
 > If something goes wrong with fetching the latest version the action will use the hardcoded default version (currently v3.18.3). If you rely on a certain version higher than the default, you should explicitly use that version instead of latest.
 
