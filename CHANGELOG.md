@@ -1,5 +1,29 @@
 # Change Log
 
+## [5.0.1] - 2026-06-23
+
+### Fixed
+
+- #271 [Fix TypeScript 6.0 compatibility errors in run.ts](https://github.com/Azure/setup-helm/pull/271)
+- #278 [fix: use chmod 755 instead of 777 for downloaded helm binary and folder](https://github.com/Azure/setup-helm/pull/278)
+
+### Changed
+
+- #286 [Bump actions/checkout from 6.0.3 to 7.0.0 in /.github/workflows in the actions group](https://github.com/Azure/setup-helm/pull/286)
+- #285 [Bump the actions group with 2 updates](https://github.com/Azure/setup-helm/pull/285)
+- #284 [Bump undici](https://github.com/Azure/setup-helm/pull/284)
+- #283 [Bump the actions group with 5 updates](https://github.com/Azure/setup-helm/pull/283)
+- #280 [Bump actions/checkout from 6.0.2 to 6.0.3 in /.github/workflows in the actions group](https://github.com/Azure/setup-helm/pull/280)
+- #279 [Bump the actions group with 2 updates](https://github.com/Azure/setup-helm/pull/279)
+- #277 [Bump vitest from 4.1.7 to 4.1.8 in the actions group](https://github.com/Azure/setup-helm/pull/277)
+- #276 [chore: remove deprecated OliverMKing release workflow, pin to SHA](https://github.com/Azure/setup-helm/pull/276)
+- #275 [Bump actions/stale from 10.2.0 to 10.3.0 in /.github/workflows in the actions group](https://github.com/Azure/setup-helm/pull/275)
+- #274 [Bump the actions group with 3 updates](https://github.com/Azure/setup-helm/pull/274)
+- #273 [Bump the actions group with 2 updates](https://github.com/Azure/setup-helm/pull/273)
+- #269 [Bump the actions group across 1 directory with 7 updates](https://github.com/Azure/setup-helm/pull/269)
+- #268 [Bump vite from 8.0.0 to 8.0.5](https://github.com/Azure/setup-helm/pull/268)
+- #260 [Migrate to ESM with esbuild/vitest and upgrade to node24 (v5.0.0)](https://github.com/Azure/setup-helm/pull/260)
+
 ## [5.0.0] - 2026-03-23
 
 ### Changed
