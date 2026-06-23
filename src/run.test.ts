@@ -209,6 +209,93 @@ describe('run.ts', () => {
       ).toThrow("No helm version found in '.tool-versions'")
    })
 
+   test('getVersionFromToolVersionsFile() - throw when the helm version is not semver-shaped', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue('helm latest')
+
+      expect(() =>
+         run.getVersionFromToolVersionsFile('.tool-versions')
+      ).toThrow(
+         "The helm version 'latest' in '.tool-versions' is not a valid semantic version"
+      )
+   })
+
+   test('isSemVerShaped() - accept semver-shaped versions with or without a v prefix', () => {
+      expect(run.isSemVerShaped('3.14.0')).toBe(true)
+      expect(run.isSemVerShaped('v3.14.0')).toBe(true)
+      expect(run.isSemVerShaped('3.14.0-rc.1')).toBe(true)
+   })
+
+   test('isSemVerShaped() - reject values that are not semver-shaped', () => {
+      expect(run.isSemVerShaped('latest')).toBe(false)
+      expect(run.isSemVerShaped('3.14')).toBe(false)
+      expect(run.isSemVerShaped('abc')).toBe(false)
+   })
+
+   // Stubs the download chain so run() resolves to a cached helm binary,
+   // letting these tests focus on version-vs-version-file resolution.
+   const stubDownloadChain = () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(toolCache.find).mockReturnValue('pathToCachedDir')
+      vi.mocked(fs.chmodSync).mockImplementation(() => {})
+      vi.mocked(fs.readdirSync).mockReturnValue([
+         'helm' as unknown as fs.Dirent<NonSharedBuffer>
+      ])
+      vi.mocked(fs.statSync).mockReturnValue({
+         isDirectory: () => false
+      } as fs.Stats)
+   }
+
+   const inputs = (version: string, versionFile: string) =>
+      vi.mocked(core.getInput).mockImplementation((name: string) => {
+         if (name === 'version') return version
+         if (name === 'version-file') return versionFile
+         if (name === 'downloadBaseURL') return downloadBaseURL
+         return ''
+      })
+
+   test('run() - resolve the version from version-file when version is not set', async () => {
+      stubDownloadChain()
+      inputs('', '.tool-versions')
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue('helm 3.14.0')
+
+      await run.run()
+
+      expect(core.warning).not.toHaveBeenCalled()
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.0')
+      expect(core.setOutput).toHaveBeenCalledWith(
+         'helm-path',
+         path.join('pathToCachedDir', 'helm')
+      )
+   })
+
+   test('run() - resolve the version from version-file when version is left at the latest default', async () => {
+      stubDownloadChain()
+      inputs('latest', '.tool-versions')
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue('helm 3.14.0')
+
+      await run.run()
+
+      expect(core.warning).not.toHaveBeenCalled()
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.0')
+   })
+
+   test('run() - warn and prefer version over version-file when both are set', async () => {
+      stubDownloadChain()
+      inputs('3.5.0', '.tool-versions')
+
+      await run.run()
+
+      expect(core.warning).toHaveBeenCalledWith(
+         `Both 'version' and 'version-file' inputs are specified, only 'version' will be used.`
+      )
+      expect(fs.readFileSync).not.toHaveBeenCalled()
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.5.0')
+   })
+
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {
       vi.mocked(fs.readdirSync).mockImplementation((file, _?) => {
          if (file == 'mainFolder')
