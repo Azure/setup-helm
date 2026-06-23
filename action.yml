@@ -3,8 +3,11 @@ description: 'Install a specific version of helm binary. Acceptable values are l
 inputs:
    version:
       description: 'Version of helm'
-      required: true
+      required: false
       default: 'latest'
+   version-file:
+      description: 'Path to a .tool-versions file to read the helm version from'
+      required: false
    token:
       description: GitHub token. Used to be required to fetch the latest version
       required: false

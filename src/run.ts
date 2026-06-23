@@ -13,11 +13,27 @@ const helmToolName = 'helm'
 export const stableHelmVersion = 'v3.18.4'
 
 export async function run() {
-   let version = core.getInput('version', {required: true})
+   let version = core.getInput('version')
+   const versionFile = core.getInput('version-file')
+
+   if (versionFile) {
+      if (version && version !== 'latest') {
+         core.warning(
+            `Both 'version' and 'version-file' inputs are specified, only 'version' will be used.`
+         )
+      } else {
+         version = getVersionFromToolVersionsFile(versionFile)
+         core.info(`Resolved Helm version '${version}' from '${versionFile}'`)
+      }
+   }
+
+   if (!version) {
+      version = 'latest'
+   }
 
    if (version !== 'latest' && version[0] !== 'v') {
-      core.info('Getting latest Helm version')
       version = getValidVersion(version)
+      core.info(`Normalized Helm version to '${version}'`)
    }
    if (version.toLocaleLowerCase() === 'latest') {
       version = await getLatestHelmVersion()
@@ -44,6 +60,51 @@ export async function run() {
 // Prefixes version with v
 export function getValidVersion(version: string): string {
    return 'v' + version
+}
+
+// Matches a semantic version (major.minor.patch) with an optional leading 'v'
+// and optional pre-release / build-metadata suffixes, e.g. '3.14.0', 'v3.14.0',
+// '3.14.0-rc.1'.
+const semVerShape = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+
+// Returns true when version looks like a semantic version
+export function isSemVerShaped(version: string): boolean {
+   return semVerShape.test(version)
+}
+
+// Reads a .tool-versions file and returns the helm version declared in it
+export function getVersionFromToolVersionsFile(filePath: string): string {
+   if (!fs.existsSync(filePath)) {
+      throw new Error(`The version-file '${filePath}' does not exist`)
+   }
+   const content = fs.readFileSync(filePath, 'utf8')
+   const version = parseToolVersions(content)
+   if (!version) {
+      throw new Error(`No helm version found in '${filePath}'`)
+   }
+   if (!isSemVerShaped(version)) {
+      throw new Error(
+         `The helm version '${version}' in '${filePath}' is not a valid semantic version`
+      )
+   }
+   return version
+}
+
+// Parses .tool-versions content (asdf/mise format) and returns the first
+// helm version, or an empty string when none is declared. Lines look like
+// `helm 3.14.0`; comments (#) and blank lines are ignored.
+export function parseToolVersions(content: string): string {
+   for (const line of content.split(/\r?\n/)) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) {
+         continue
+      }
+      const [tool, version] = trimmed.split(/\s+/)
+      if (tool === helmToolName && version) {
+         return version
+      }
+   }
+   return ''
 }
 
 // Gets the latest helm version or returns a default stable if getting latest fails
