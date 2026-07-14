@@ -220,6 +220,13 @@ describe('run.ts', () => {
       )
    })
 
+   test('getVersionFromToolVersionsFile() - accept a major.minor version', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue('helm 3.14')
+
+      expect(run.getVersionFromToolVersionsFile('.tool-versions')).toBe('3.14')
+   })
+
    test('isSemVerShaped() - accept semver-shaped versions with or without a v prefix', () => {
       expect(run.isSemVerShaped('3.14.0')).toBe(true)
       expect(run.isSemVerShaped('v3.14.0')).toBe(true)
@@ -230,6 +237,17 @@ describe('run.ts', () => {
       expect(run.isSemVerShaped('latest')).toBe(false)
       expect(run.isSemVerShaped('3.14')).toBe(false)
       expect(run.isSemVerShaped('abc')).toBe(false)
+   })
+
+   test('isMajorMinorShaped() - accept major.minor with or without a v prefix', () => {
+      expect(run.isMajorMinorShaped('3.14')).toBe(true)
+      expect(run.isMajorMinorShaped('v3.14')).toBe(true)
+   })
+
+   test('isMajorMinorShaped() - reject full versions and other values', () => {
+      expect(run.isMajorMinorShaped('3.14.0')).toBe(false)
+      expect(run.isMajorMinorShaped('latest')).toBe(false)
+      expect(run.isMajorMinorShaped('3')).toBe(false)
    })
 
    // Stubs the download chain so run() resolves to a cached helm binary,
@@ -294,6 +312,110 @@ describe('run.ts', () => {
       )
       expect(fs.readFileSync).not.toHaveBeenCalled()
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.5.0')
+   })
+
+   // Stubs global fetch so HEAD probes report the given set of versions as
+   // existing (200) and everything else as missing (404).
+   const stubPatchProbes = (existing: string[]) => {
+      const present = new Set(existing)
+      vi.stubGlobal(
+         'fetch',
+         vi.fn(async (url: string) => {
+            const version = url.match(/helm-(v\d+\.\d+\.\d+)-/)?.[1] ?? ''
+            return {ok: present.has(version)} as Response
+         })
+      )
+   }
+
+   test('helmPatchExists() - return true when the artifact responds 200', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: true} as Response))
+
+      expect(await run.helmPatchExists(downloadBaseURL, 'v3.14.4')).toBe(true)
+   })
+
+   test('helmPatchExists() - return false when the artifact responds 404', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: false} as Response))
+
+      expect(await run.helmPatchExists(downloadBaseURL, 'v3.14.99')).toBe(false)
+   })
+
+   test('resolveLatestPatchVersion() - return the newest existing patch', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      stubPatchProbes(['v3.14.0', 'v3.14.1', 'v3.14.2', 'v3.14.3', 'v3.14.4'])
+
+      expect(await run.resolveLatestPatchVersion(downloadBaseURL, '3.14')).toBe(
+         'v3.14.4'
+      )
+   })
+
+   test('resolveLatestPatchVersion() - tolerate a skipped patch number', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      stubPatchProbes(['v3.14.0', 'v3.14.1', 'v3.14.3'])
+
+      expect(
+         await run.resolveLatestPatchVersion(downloadBaseURL, 'v3.14')
+      ).toBe('v3.14.3')
+   })
+
+   test('resolveLatestPatchVersion() - throw when the minor has no releases', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      stubPatchProbes([])
+
+      await expect(
+         run.resolveLatestPatchVersion(downloadBaseURL, '9.99')
+      ).rejects.toThrow('No Helm releases found for 9.99')
+   })
+
+   test('resolveLatestPatchVersion() - propagate network errors', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.stubGlobal(
+         'fetch',
+         vi.fn().mockRejectedValue(new Error('Network Error'))
+      )
+
+      await expect(
+         run.resolveLatestPatchVersion(downloadBaseURL, '3.14')
+      ).rejects.toThrow('Network Error')
+   })
+
+   test('resolveLatestPatchVersion() - throw when the host reports every patch as existing', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: true} as Response))
+
+      await expect(
+         run.resolveLatestPatchVersion(downloadBaseURL, '3.14')
+      ).rejects.toThrow('exceeded 100 probes')
+   })
+
+   test('run() - resolve the latest patch for a major.minor version input', async () => {
+      stubDownloadChain()
+      inputs('3.14', '')
+      stubPatchProbes(['v3.14.0', 'v3.14.1', 'v3.14.2', 'v3.14.3', 'v3.14.4'])
+
+      await run.run()
+
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.4')
+   })
+
+   test('run() - resolve the latest patch for a major.minor version-file entry', async () => {
+      stubDownloadChain()
+      inputs('', '.tool-versions')
+      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.readFileSync).mockReturnValue('helm 3.14')
+      stubPatchProbes(['v3.14.0', 'v3.14.1', 'v3.14.2', 'v3.14.3', 'v3.14.4'])
+
+      await run.run()
+
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.4')
    })
 
    test('walkSync() - return path to the all files matching fileToFind in dir', () => {

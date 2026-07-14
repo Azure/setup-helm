@@ -31,15 +31,17 @@ export async function run() {
       version = 'latest'
    }
 
-   if (version !== 'latest' && version[0] !== 'v') {
+   const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
+
+   if (version.toLocaleLowerCase() === 'latest') {
+      version = await getLatestHelmVersion()
+   } else if (isMajorMinorShaped(version)) {
+      version = await resolveLatestPatchVersion(downloadBaseURL, version)
+      core.info(`Resolved latest patch Helm version to '${version}'`)
+   } else if (version[0] !== 'v') {
       version = getValidVersion(version)
       core.info(`Normalized Helm version to '${version}'`)
    }
-   if (version.toLocaleLowerCase() === 'latest') {
-      version = await getLatestHelmVersion()
-   }
-
-   const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
 
    core.startGroup(`Installing ${version}`)
    const cachedPath = await downloadHelm(downloadBaseURL, version)
@@ -72,6 +74,15 @@ export function isSemVerShaped(version: string): boolean {
    return semVerShape.test(version)
 }
 
+// Matches a major.minor version with an optional leading 'v' and no patch
+// component, e.g. '3.14' or 'v3.14'.
+const majorMinorShape = /^v?\d+\.\d+$/
+
+// Returns true when version is a major.minor value with no patch component
+export function isMajorMinorShaped(version: string): boolean {
+   return majorMinorShape.test(version)
+}
+
 // Reads a .tool-versions file and returns the helm version declared in it
 export function getVersionFromToolVersionsFile(filePath: string): string {
    if (!fs.existsSync(filePath)) {
@@ -82,7 +93,7 @@ export function getVersionFromToolVersionsFile(filePath: string): string {
    if (!version) {
       throw new Error(`No helm version found in '${filePath}'`)
    }
-   if (!isSemVerShaped(version)) {
+   if (!isSemVerShaped(version) && !isMajorMinorShaped(version)) {
       throw new Error(
          `The helm version '${version}' in '${filePath}' is not a valid semantic version`
       )
@@ -119,6 +130,66 @@ export async function getLatestHelmVersion(): Promise<string> {
       )
       return stableHelmVersion
    }
+}
+
+// Number of consecutive missing patches to probe before concluding the walk,
+// and an upper bound to keep resolution from running unbounded.
+const patchLookahead = 3
+const maxPatch = 100
+
+// Sends a HEAD request for the given version's download URL and returns true
+// when the artifact exists (2xx). Genuine network errors are propagated so the
+// caller can distinguish an outage from a missing patch.
+export async function helmPatchExists(
+   baseURL: string,
+   version: string
+): Promise<boolean> {
+   const response = await fetch(getHelmDownloadURL(baseURL, version), {
+      method: 'HEAD'
+   })
+   return response.ok
+}
+
+// Resolves a major.minor value (e.g. '3.14' or 'v3.14') to the newest available
+// patch (e.g. 'v3.14.4') by probing the download host for sequential patches.
+// Only 'major.minor.n' URLs are probed, so prereleases are never considered.
+export async function resolveLatestPatchVersion(
+   baseURL: string,
+   version: string
+): Promise<string> {
+   const [major, minor] = (
+      version[0] === 'v' ? version.slice(1) : version
+   ).split('.')
+
+   if (!(await helmPatchExists(baseURL, `v${major}.${minor}.0`))) {
+      throw new Error(`No Helm releases found for ${major}.${minor}`)
+   }
+
+   let latestPatch = 0
+   let consecutiveMisses = 0
+   for (
+      let patch = 1;
+      patch <= maxPatch && consecutiveMisses < patchLookahead;
+      patch++
+   ) {
+      if (await helmPatchExists(baseURL, `v${major}.${minor}.${patch}`)) {
+         latestPatch = patch
+         consecutiveMisses = 0
+      } else {
+         consecutiveMisses++
+      }
+   }
+
+   // The look-ahead is what should end the walk. Exhausting maxPatch without a
+   // trailing run of misses means the host answered 200 for every probe (e.g. a
+   // catch-all mirror), so the resolved version cannot be trusted.
+   if (consecutiveMisses < patchLookahead) {
+      throw new Error(
+         `Unable to resolve latest patch for ${major}.${minor} (exceeded ${maxPatch} probes)`
+      )
+   }
+
+   return `v${major}.${minor}.${latestPatch}`
 }
 
 export function getArch(): string {
