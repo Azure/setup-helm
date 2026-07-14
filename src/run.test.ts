@@ -145,15 +145,14 @@ describe('run.ts', () => {
          status: 200,
          text: async () => 'v9.99.999'
       } as Response
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(res))
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(res)
       expect(await run.getLatestHelmVersion()).toBe('v9.99.999')
    })
 
    test('getLatestHelmVersion() - return the stable version of HELM when simulating a network error', async () => {
       const errorMessage: string = 'Network Error'
-      vi.stubGlobal(
-         'fetch',
-         vi.fn().mockRejectedValueOnce(new Error(errorMessage))
+      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(
+         new Error(errorMessage)
       )
       expect(await run.getLatestHelmVersion()).toBe(run.stableHelmVersion)
    })
@@ -209,14 +208,14 @@ describe('run.ts', () => {
       ).toThrow("No helm version found in '.tool-versions'")
    })
 
-   test('getVersionFromToolVersionsFile() - throw when the helm version is not semver-shaped', () => {
+   test('getVersionFromToolVersionsFile() - throw when the helm version is not valid', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true)
       vi.mocked(fs.readFileSync).mockReturnValue('helm latest')
 
       expect(() =>
          run.getVersionFromToolVersionsFile('.tool-versions')
       ).toThrow(
-         "The helm version 'latest' in '.tool-versions' is not a valid semantic version"
+         "The helm version 'latest' in '.tool-versions' is not valid. Provide a full version (e.g. '3.14.0') or a major.minor version (e.g. '3.14' or '3.14.x')"
       )
    })
 
@@ -242,6 +241,13 @@ describe('run.ts', () => {
    test('isMajorMinorShaped() - accept major.minor with or without a v prefix', () => {
       expect(run.isMajorMinorShaped('3.14')).toBe(true)
       expect(run.isMajorMinorShaped('v3.14')).toBe(true)
+   })
+
+   test('isMajorMinorShaped() - accept a wildcard patch (.x / .*)', () => {
+      expect(run.isMajorMinorShaped('3.14.x')).toBe(true)
+      expect(run.isMajorMinorShaped('v3.14.x')).toBe(true)
+      expect(run.isMajorMinorShaped('3.14.*')).toBe(true)
+      expect(run.isMajorMinorShaped('v3.14.*')).toBe(true)
    })
 
    test('isMajorMinorShaped() - reject full versions and other values', () => {
@@ -314,23 +320,27 @@ describe('run.ts', () => {
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.5.0')
    })
 
-   // Stubs global fetch so HEAD probes report the given set of versions as
-   // existing (200) and everything else as missing (404).
+   // Spies on global fetch so HEAD probes report the given set of versions as
+   // existing (200) and everything else as missing (404). Using vi.spyOn (rather
+   // than vi.stubGlobal) lets restoreAllMocks() in afterEach reliably restore the
+   // real fetch, so the mock never leaks into later tests.
    const stubPatchProbes = (existing: string[]) => {
       const present = new Set(existing)
-      vi.stubGlobal(
-         'fetch',
-         vi.fn(async (url: string) => {
-            const version = url.match(/helm-(v\d+\.\d+\.\d+)-/)?.[1] ?? ''
-            return {ok: present.has(version)} as Response
-         })
-      )
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+         const version =
+            String(input).match(/helm-(v\d+\.\d+\.\d+)-/)?.[1] ?? ''
+         const ok = present.has(version)
+         return {ok, status: ok ? 200 : 404} as Response
+      })
    }
 
    test('helmPatchExists() - return true when the artifact responds 200', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: true} as Response))
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+         ok: true,
+         status: 200
+      } as Response)
 
       expect(await run.helmPatchExists(downloadBaseURL, 'v3.14.4')).toBe(true)
    })
@@ -338,9 +348,25 @@ describe('run.ts', () => {
    test('helmPatchExists() - return false when the artifact responds 404', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: false} as Response))
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+         ok: false,
+         status: 404
+      } as Response)
 
       expect(await run.helmPatchExists(downloadBaseURL, 'v3.14.99')).toBe(false)
+   })
+
+   test('helmPatchExists() - throw on a non-404 error status', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+         ok: false,
+         status: 429
+      } as Response)
+
+      await expect(
+         run.helmPatchExists(downloadBaseURL, 'v3.14.4')
+      ).rejects.toThrow('Unexpected HTTP 429')
    })
 
    test('resolveLatestPatchVersion() - return the newest existing patch', async () => {
@@ -363,6 +389,19 @@ describe('run.ts', () => {
       ).toBe('v3.14.3')
    })
 
+   test('resolveLatestPatchVersion() - accept a wildcard patch (.x / .*)', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      stubPatchProbes(['v3.12.0', 'v3.12.1', 'v3.12.2', 'v3.12.3'])
+
+      expect(
+         await run.resolveLatestPatchVersion(downloadBaseURL, 'v3.12.x')
+      ).toBe('v3.12.3')
+      expect(
+         await run.resolveLatestPatchVersion(downloadBaseURL, '3.12.*')
+      ).toBe('v3.12.3')
+   })
+
    test('resolveLatestPatchVersion() - throw when the minor has no releases', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
@@ -376,9 +415,8 @@ describe('run.ts', () => {
    test('resolveLatestPatchVersion() - propagate network errors', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
-      vi.stubGlobal(
-         'fetch',
-         vi.fn().mockRejectedValue(new Error('Network Error'))
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+         new Error('Network Error')
       )
 
       await expect(
@@ -389,7 +427,7 @@ describe('run.ts', () => {
    test('resolveLatestPatchVersion() - throw when the host reports every patch as existing', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: true} as Response))
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({ok: true} as Response)
 
       await expect(
          run.resolveLatestPatchVersion(downloadBaseURL, '3.14')
@@ -404,6 +442,16 @@ describe('run.ts', () => {
       await run.run()
 
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.4')
+   })
+
+   test('run() - resolve the latest patch for a wildcard patch version input', async () => {
+      stubDownloadChain()
+      inputs('v3.12.x', '')
+      stubPatchProbes(['v3.12.0', 'v3.12.1', 'v3.12.2', 'v3.12.3'])
+
+      await run.run()
+
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.12.3')
    })
 
    test('run() - resolve the latest patch for a major.minor version-file entry', async () => {

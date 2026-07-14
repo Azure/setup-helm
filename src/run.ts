@@ -74,11 +74,13 @@ export function isSemVerShaped(version: string): boolean {
    return semVerShape.test(version)
 }
 
-// Matches a major.minor version with an optional leading 'v' and no patch
-// component, e.g. '3.14' or 'v3.14'.
-const majorMinorShape = /^v?\d+\.\d+$/
+// Matches a major.minor version with an optional leading 'v' and either no
+// patch component or a wildcard patch ('.x' / '.*'), e.g. '3.14', 'v3.14',
+// '3.14.x', 'v3.14.*'.
+const majorMinorShape = /^v?\d+\.\d+(?:\.[x*])?$/
 
-// Returns true when version is a major.minor value with no patch component
+// Returns true when version is a major.minor value (optionally with a wildcard
+// patch such as '.x' or '.*')
 export function isMajorMinorShaped(version: string): boolean {
    return majorMinorShape.test(version)
 }
@@ -95,7 +97,7 @@ export function getVersionFromToolVersionsFile(filePath: string): string {
    }
    if (!isSemVerShaped(version) && !isMajorMinorShaped(version)) {
       throw new Error(
-         `The helm version '${version}' in '${filePath}' is not a valid semantic version`
+         `The helm version '${version}' in '${filePath}' is not valid. Provide a full version (e.g. '3.14.0') or a major.minor version (e.g. '3.14' or '3.14.x')`
       )
    }
    return version
@@ -137,17 +139,26 @@ export async function getLatestHelmVersion(): Promise<string> {
 const patchLookahead = 3
 const maxPatch = 100
 
-// Sends a HEAD request for the given version's download URL and returns true
-// when the artifact exists (2xx). Genuine network errors are propagated so the
-// caller can distinguish an outage from a missing patch.
+// Sends a HEAD request for the given version's download URL. Returns true when
+// the artifact exists (2xx) and false only when it is definitively absent
+// (404). Any other status (403/405/429/5xx, ...) and genuine network errors are
+// thrown, so transient failures, rate-limiting, or a host that disallows HEAD
+// are never mistaken for a missing patch.
 export async function helmPatchExists(
    baseURL: string,
    version: string
 ): Promise<boolean> {
-   const response = await fetch(getHelmDownloadURL(baseURL, version), {
-      method: 'HEAD'
-   })
-   return response.ok
+   const url = getHelmDownloadURL(baseURL, version)
+   const response = await fetch(url, {method: 'HEAD'})
+   if (response.ok) {
+      return true
+   }
+   if (response.status === 404) {
+      return false
+   }
+   throw new Error(
+      `Unexpected HTTP ${response.status} while checking for Helm artifact at ${url}`
+   )
 }
 
 // Resolves a major.minor value (e.g. '3.14' or 'v3.14') to the newest available
