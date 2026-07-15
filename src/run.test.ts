@@ -140,6 +140,34 @@ describe('run.ts', () => {
       expect(os.platform).toHaveBeenCalled()
    })
 
+   test('getHelmDownloadURL() - preserve a subpath base URL without a trailing slash', () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+
+      const expected =
+         'https://mirror.example/kubernetes/helm/helm-v3.8.0-linux-amd64.tar.gz'
+      expect(
+         run.getHelmDownloadURL(
+            'https://mirror.example/kubernetes/helm',
+            'v3.8.0'
+         )
+      ).toBe(expected)
+   })
+
+   test('getHelmDownloadURL() - preserve a subpath base URL with a trailing slash', () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+
+      const expected =
+         'https://mirror.example/kubernetes/helm/helm-v3.8.0-linux-amd64.tar.gz'
+      expect(
+         run.getHelmDownloadURL(
+            'https://mirror.example/kubernetes/helm/',
+            'v3.8.0'
+         )
+      ).toBe(expected)
+   })
+
    test('getLatestHelmVersion() - return the latest version of HELM', async () => {
       const res = {
          status: 200,

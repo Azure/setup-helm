@@ -139,7 +139,11 @@ export function getExecutableExtension(): string {
 
 export function getHelmDownloadURL(baseURL: string, version: string): string {
    const urlPath = `helm-${version}-${getPlatform()}-${getArch()}.${getArchiveExtension()}`
-   const url = new URL(urlPath, baseURL)
+   // Ensure the base ends with '/' so a subpath mirror (e.g.
+   // 'https://example/kubernetes/helm') is preserved; otherwise URL resolution
+   // replaces the last path segment and points at the wrong location.
+   const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
+   const url = new URL(urlPath, base)
    return url.toString()
 }
 
