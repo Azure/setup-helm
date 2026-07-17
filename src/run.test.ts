@@ -379,6 +379,60 @@ describe('run.ts', () => {
       )
    })
 
+   test('resolveLatestPatchVersion() - use the blob listing in a single request when supported', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      const listing =
+         '<EnumerationResults>' +
+         '<Blob><Name>helm-v3.14.0-linux-amd64.tar.gz</Name></Blob>' +
+         '<Blob><Name>helm-v3.14.0-rc.1-linux-amd64.tar.gz</Name></Blob>' +
+         '<Blob><Name>helm-v3.14.4-linux-amd64.tar.gz</Name></Blob>' +
+         '<Blob><Name>helm-v3.14.4-linux-amd64.tar.gz.sha256</Name></Blob>' +
+         '</EnumerationResults>'
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+         ok: true,
+         text: async () => listing
+      } as Response)
+
+      expect(await run.resolveLatestPatchVersion(downloadBaseURL, '3.14')).toBe(
+         'v3.14.4'
+      )
+      // A single listing request; no per-patch HEAD probing.
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+   })
+
+   test('resolveLatestPatchVersion() - fall back to probing when listing is unavailable', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      const present = new Set(['v3.14.0', 'v3.14.1', 'v3.14.2'])
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+         const url = String(input)
+         if (url.includes('comp=list')) {
+            return {ok: false, status: 404} as Response
+         }
+         const version = url.match(/helm-(v\d+\.\d+\.\d+)-/)?.[1] ?? ''
+         const ok = present.has(version)
+         return {ok, status: ok ? 200 : 404} as Response
+      })
+
+      expect(await run.resolveLatestPatchVersion(downloadBaseURL, '3.14')).toBe(
+         'v3.14.2'
+      )
+   })
+
+   test('resolveLatestPatchViaListing() - return null when the response is not a listing', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+         ok: true,
+         text: async () => '<html>directory index, not a blob listing</html>'
+      } as Response)
+
+      expect(
+         await run.resolveLatestPatchViaListing(downloadBaseURL, '3', '14')
+      ).toBeNull()
+   })
+
    test('resolveLatestPatchVersion() - tolerate a skipped patch number', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')

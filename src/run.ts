@@ -64,10 +64,12 @@ export function getValidVersion(version: string): string {
    return 'v' + version
 }
 
-// Matches a semantic version (major.minor.patch) with an optional leading 'v'
-// and optional pre-release / build-metadata suffixes, e.g. '3.14.0', 'v3.14.0',
-// '3.14.0-rc.1'.
-const semVerShape = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+// Matches a complete semantic version (major.minor.patch with optional
+// pre-release / build metadata). This is the official regex suggested at
+// https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+// with an added optional leading 'v' to accept Helm-style tags (e.g. 'v3.14.0').
+const semVerShape =
+   /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
 
 // Returns true when version looks like a semantic version
 export function isSemVerShaped(version: string): boolean {
@@ -161,9 +163,59 @@ export async function helmPatchExists(
    )
 }
 
+// Attempts to resolve the latest patch in a single request via the Azure Blob
+// container-listing API that backs get.helm.sh. Returns the newest stable patch
+// version, or null when the host does not support listing (any non-listing
+// response, empty result, or error) so the caller can fall back to probing.
+// Only 'major.minor.patch-<platform>' names are matched, so prereleases and
+// sidecar files (.sha256, ...) are ignored.
+export async function resolveLatestPatchViaListing(
+   baseURL: string,
+   major: string,
+   minor: string
+): Promise<string | null> {
+   let body: string
+   try {
+      const listURL = new URL(baseURL)
+      listURL.searchParams.set('restype', 'container')
+      listURL.searchParams.set('comp', 'list')
+      listURL.searchParams.set('prefix', `helm-v${major}.${minor}.`)
+      const response = await fetch(listURL.toString())
+      if (!response.ok) {
+         return null
+      }
+      body = await response.text()
+   } catch {
+      return null
+   }
+
+   if (!body.includes('<EnumerationResults')) {
+      return null
+   }
+
+   const patchPattern = new RegExp(
+      `helm-v${major}\\.${minor}\\.(\\d+)-(?:darwin|linux|windows)`,
+      'g'
+   )
+   let latestPatch = -1
+   for (const match of body.matchAll(patchPattern)) {
+      const patch = Number(match[1])
+      if (patch > latestPatch) {
+         latestPatch = patch
+      }
+   }
+
+   if (latestPatch < 0) {
+      return null
+   }
+   return `v${major}.${minor}.${latestPatch}`
+}
+
 // Resolves a major.minor value (e.g. '3.14' or 'v3.14') to the newest available
-// patch (e.g. 'v3.14.4') by probing the download host for sequential patches.
-// Only 'major.minor.n' URLs are probed, so prereleases are never considered.
+// patch (e.g. 'v3.14.4'). Fast path: a single container-listing request (which
+// get.helm.sh supports). When the host does not support listing, it falls back
+// to probing the download host for sequential patches. Only 'major.minor.n'
+// artifacts are considered, so prereleases are never selected.
 export async function resolveLatestPatchVersion(
    baseURL: string,
    version: string
@@ -171,6 +223,11 @@ export async function resolveLatestPatchVersion(
    const [major, minor] = (
       version[0] === 'v' ? version.slice(1) : version
    ).split('.')
+
+   const listed = await resolveLatestPatchViaListing(baseURL, major, minor)
+   if (listed) {
+      return listed
+   }
 
    if (!(await helmPatchExists(baseURL, `v${major}.${minor}.0`))) {
       throw new Error(`No Helm releases found for ${major}.${minor}`)
