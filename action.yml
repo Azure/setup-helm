@@ -17,6 +17,10 @@ inputs:
       description: 'Set the download base URL'
       required: false
       default: 'https://get.helm.sh'
+   latest-fallback:
+      description: "When 'version' is 'latest' and the latest version cannot be determined after retrying, install the built-in default version instead of failing. Off by default, because the built-in default can be a major version behind what 'latest' resolves to."
+      required: false
+      default: 'false'
 outputs:
    helm-path:
       description: 'Path to the cached helm binary'
