@@ -25,11 +25,11 @@
       "prepare": "husky"
    },
    "devDependencies": {
-      "@types/node": "^26.2.0",
+      "@types/node": "^26.6.1",
       "esbuild": "^0.28",
       "husky": "^9.1.7",
-      "prettier": "^3.9.6",
+      "prettier": "^3.9.8",
       "typescript": "^7.0.2",
-      "vitest": "^4"
+      "vitest": "^5"
    }
 }
