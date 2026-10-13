@@ -34,7 +34,9 @@ export async function run() {
    const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
 
    if (version.toLocaleLowerCase() === 'latest') {
-      version = await getLatestHelmVersion()
+      const fallbackToDefault =
+         core.getInput('latest-fallback').toLowerCase() === 'true'
+      version = await getLatestHelmVersion(fallbackToDefault)
    } else if (isMajorMinorShaped(version)) {
       version = await resolveLatestPatchVersion(downloadBaseURL, version)
       core.info(`Resolved latest patch Helm version to '${version}'`)
@@ -122,15 +124,58 @@ export function parseToolVersions(content: string): string {
    return ''
 }
 
-// Gets the latest helm version or returns a default stable if getting latest fails
-export async function getLatestHelmVersion(): Promise<string> {
+const latestVersionURL = 'https://get.helm.sh/helm-latest-version'
+
+// Number of attempts made to fetch the latest version before giving up, and
+// the wait before the second attempt (each further wait doubles the previous).
+const latestVersionAttempts = 3
+const latestVersionRetryDelayMs = 1000
+
+// Fetches the latest helm version. A failed request or a non-2xx response is
+// retried with a short backoff, so a single transient failure does not decide
+// the outcome. Throws the last error once every attempt has failed.
+export async function fetchLatestHelmVersion(): Promise<string> {
+   let delayMs = latestVersionRetryDelayMs
+   for (let attempt = 1; ; attempt++) {
+      try {
+         const response = await fetch(latestVersionURL)
+         if (!response.ok) {
+            throw new Error(
+               `Unexpected HTTP ${response.status} from ${latestVersionURL}`
+            )
+         }
+         return (await response.text()).trim()
+      } catch (err) {
+         if (attempt >= latestVersionAttempts) {
+            throw err
+         }
+         core.info(
+            `Attempt ${attempt} of ${latestVersionAttempts} to fetch the latest Helm version failed: ${err instanceof Error ? err.message : String(err)}. Retrying in ${delayMs}ms`
+         )
+         await new Promise((resolve) => setTimeout(resolve, delayMs))
+         delayMs *= 2
+      }
+   }
+}
+
+// Gets the latest helm version. When it cannot be determined, throws, or
+// falls back to the built-in default version with a warning when
+// fallbackToDefault is set. The default version can be a major behind what
+// 'latest' resolves to, so falling back to it is opt-in.
+export async function getLatestHelmVersion(
+   fallbackToDefault = false
+): Promise<string> {
    try {
-      const response = await fetch('https://get.helm.sh/helm-latest-version')
-      const release = (await response.text()).trim()
-      return release
+      return await fetchLatestHelmVersion()
    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (!fallbackToDefault) {
+         throw new Error(
+            `Unable to determine the latest Helm version: ${message}. Set 'latest-fallback' to 'true' to install the default version ${stableHelmVersion} instead, or request a specific version`
+         )
+      }
       core.warning(
-         `Error while fetching latest Helm release: ${err instanceof Error ? err.message : String(err)}. Using default version ${stableHelmVersion}`
+         `Error while fetching latest Helm release: ${message}. Using default version ${stableHelmVersion}`
       )
       return stableHelmVersion
    }
