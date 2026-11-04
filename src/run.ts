@@ -5,6 +5,7 @@ import * as os from 'os'
 import * as path from 'path'
 import * as util from 'util'
 import * as fs from 'fs'
+import {createHash} from 'crypto'
 
 import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
@@ -32,6 +33,9 @@ export async function run() {
    }
 
    const downloadBaseURL = core.getInput('downloadBaseURL', {required: false})
+   const downloadBaseURLFallback = core.getInput('downloadBaseURLFallback', {
+      required: false
+   })
 
    if (version.toLocaleLowerCase() === 'latest') {
       // Only an explicit 'false' turns the fallback off, matching the
@@ -48,7 +52,11 @@ export async function run() {
    }
 
    core.startGroup(`Installing ${version}`)
-   const cachedPath = await downloadHelm(downloadBaseURL, version)
+   const cachedPath = await downloadHelm(
+      downloadBaseURL,
+      version,
+      downloadBaseURLFallback
+   )
    core.endGroup()
 
    try {
@@ -336,9 +344,33 @@ export function getHelmDownloadURL(baseURL: string, version: string): string {
    return url.toString()
 }
 
-export async function downloadHelm(
+export async function downloadAndVerifyHelm(
    baseURL: string,
    version: string
+): Promise<string> {
+   const downloadURL = getHelmDownloadURL(baseURL, version)
+   const archivePath = await toolCache.downloadTool(downloadURL)
+   const checksumPath = await toolCache.downloadTool(`${downloadURL}.sha256`)
+   const checksum = fs.readFileSync(checksumPath, 'utf8').trim()
+
+   if (!/^[a-fA-F0-9]{64}$/.test(checksum)) {
+      throw new Error(`Invalid SHA-256 checksum from ${downloadURL}.sha256`)
+   }
+
+   const actual = createHash('sha256')
+      .update(fs.readFileSync(archivePath))
+      .digest('hex')
+   if (actual.toLowerCase() !== checksum.toLowerCase()) {
+      throw new Error(`SHA-256 checksum mismatch for ${downloadURL}`)
+   }
+
+   return archivePath
+}
+
+export async function downloadHelm(
+   baseURL: string,
+   version: string,
+   fallbackBaseURL?: string
 ): Promise<string> {
    let cachedToolpath = toolCache.find(helmToolName, version)
    if (cachedToolpath) {
@@ -347,15 +379,35 @@ export async function downloadHelm(
       core.info(`Downloading '${version}' from '${baseURL}'`)
       let helmDownloadPath
       try {
-         helmDownloadPath = await toolCache.downloadTool(
-            getHelmDownloadURL(baseURL, version)
-         )
-      } catch (exception) {
+         helmDownloadPath = await downloadAndVerifyHelm(baseURL, version)
+      } catch (error) {
+         if (fallbackBaseURL) {
+            core.warning(
+               `Unable to download and verify Helm from '${baseURL}': ${error instanceof Error ? error.message : String(error)}. Trying fallback '${fallbackBaseURL}'`
+            )
+            try {
+               helmDownloadPath = await downloadAndVerifyHelm(
+                  fallbackBaseURL,
+                  version
+               )
+            } catch (fallbackError) {
+               throw new Error(
+                  `Failed to download and verify Helm from '${baseURL}' and fallback '${fallbackBaseURL}': ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`
+               )
+            }
+         } else {
+            throw new Error(
+               `Failed to download and verify Helm from location ${getHelmDownloadURL(
+                  baseURL,
+                  version
+               )}: ${error instanceof Error ? error.message : String(error)}`
+            )
+         }
+      }
+
+      if (!helmDownloadPath) {
          throw new Error(
-            `Failed to download Helm from location ${getHelmDownloadURL(
-               baseURL,
-               version
-            )}`
+            `Failed to download and verify Helm version '${version}'`
          )
       }
 

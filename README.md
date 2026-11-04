@@ -42,6 +42,20 @@ If both `version` and `version-file` are set, an explicitly requested `version` 
 >
 > If you rely on a certain version, you should explicitly request that version instead of `latest`.
 
+Downloaded Helm archives are verified against the SHA-256 checksum published beside the archive before extraction. Custom download mirrors must provide the matching checksum at `<archive-url>.sha256`.
+
+An optional fallback mirror can be used when the archive or checksum cannot be downloaded or verified from the primary location:
+
+```yaml
+- uses: azure/setup-helm@v5
+  with:
+     version: 'v3.18.4'
+     downloadBaseURL: 'https://primary.example/helm'
+     downloadBaseURLFallback: 'https://fallback.example/helm'
+```
+
+The fallback archive is also verified against the checksum from the fallback mirror. This capability follows the use case proposed by @mvtavares in [#227](https://github.com/Azure/setup-helm/pull/227).
+
 The cached helm binary path is prepended to the PATH environment variable as well as stored in the helm-path output variable.
 Refer to the action metadata file for details about all the inputs https://github.com/Azure/setup-helm/blob/master/action.yml
 

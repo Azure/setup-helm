@@ -17,6 +17,10 @@ inputs:
       description: 'Set the download base URL'
       required: false
       default: 'https://get.helm.sh'
+   downloadBaseURLFallback:
+      description: 'Fallback base URL used when the archive or checksum cannot be downloaded or verified from downloadBaseURL'
+      required: false
+      default: ''
    latest-fallback:
       description: "When 'version' is 'latest' and the latest version cannot be determined after retrying, install the built-in default version instead of failing. Set to 'false' to fail the step instead, since the built-in default can be a major version behind what 'latest' resolves to."
       required: false
