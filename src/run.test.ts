@@ -229,12 +229,10 @@ describe('run.ts', () => {
       const fetchSpy = vi
          .spyOn(globalThis, 'fetch')
          .mockRejectedValue(new Error(errorMessage))
-      expect(await getLatestHelmVersionWithoutDelay()).toBe(
-         run.stableHelmVersion
-      )
+      expect(await getLatestHelmVersionWithoutDelay()).toBe('v4.3.1')
       expect(fetchSpy).toHaveBeenCalledTimes(3)
       expect(core.warning).toHaveBeenCalledWith(
-         expect.stringContaining(errorMessage)
+         `Error while fetching latest Helm release: ${errorMessage}. Using default version v4.3.1. Set 'latest-fallback' to 'false' to fail the step instead`
       )
    })
 

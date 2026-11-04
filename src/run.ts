@@ -10,7 +10,7 @@ import * as toolCache from '@actions/tool-cache'
 import * as core from '@actions/core'
 
 const helmToolName = 'helm'
-export const stableHelmVersion = 'v3.18.4'
+export const stableHelmVersion = 'v4.3.1'
 
 export async function run() {
    let version = core.getInput('version')

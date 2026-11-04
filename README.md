@@ -4,7 +4,7 @@ Install a specific version of helm binary on the runner.
 
 ## Example
 
-Acceptable values are latest or any semantic version string like v3.5.0 Use this action in workflow to define which version of helm will be used. v2+ of this action only support Helm3.
+Acceptable values are `latest` or any semantic version string such as `v4.3.1`. The `latest` value follows Helm's current stable release and can change major versions.
 
 ```yaml
 - uses: azure/setup-helm@v5
@@ -25,13 +25,13 @@ Alternatively, the version can be read from a [`.tool-versions`](https://asdf-vm
 The action reads the version declared for the `helm` tool, for example:
 
 ```
-helm 3.18.4
+helm 4.3.1
 ```
 
 If both `version` and `version-file` are set, an explicitly requested `version` takes precedence and `version-file` is ignored (a warning is emitted). Because `version` defaults to `latest`, `version-file` is only ignored when you set `version` to a specific value other than `latest`; if `version` is left at its default, the version from `version-file` is used.
 
 > [!NOTE]
-> If fetching the latest version fails, the action retries a few times and then uses the hardcoded default version (currently v3.18.4). That default can be a major version behind what `latest` resolves to. To fail the step with the underlying error instead, set `latest-fallback` to `'false'`:
+> If fetching the latest version fails, the action retries a few times and then uses the built-in fallback version (currently v4.3.1). This is a last-known stable version and can become a major version behind what `latest` resolves to. To fail the step with the underlying error instead, set `latest-fallback` to `'false'`:
 >
 > ```yaml
 > - uses: azure/setup-helm@v5
