@@ -142,6 +142,9 @@ export async function fetchLatestHelmVersion(): Promise<string> {
       try {
          const response = await fetch(latestVersionURL)
          if (!response.ok) {
+            // The body is never read, so cancel it to release the connection
+            // before the next attempt.
+            await response.body?.cancel()
             throw new Error(
                `Unexpected HTTP ${response.status} from ${latestVersionURL}`
             )

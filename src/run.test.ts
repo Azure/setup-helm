@@ -209,6 +209,21 @@ describe('run.ts', () => {
       expect(core.warning).not.toHaveBeenCalled()
    })
 
+   test('getLatestHelmVersion() - cancel the unread body of a non-success response before retrying', async () => {
+      const cancel = vi.fn()
+      const fetchSpy = vi
+         .spyOn(globalThis, 'fetch')
+         .mockResolvedValueOnce(
+            new Response(new ReadableStream({cancel}), {status: 503})
+         )
+         .mockResolvedValueOnce(latestVersionResponse('v9.99.999'))
+      expect(await getLatestHelmVersionWithoutDelay()).toBe('v9.99.999')
+      expect(cancel).toHaveBeenCalledTimes(1)
+      expect(cancel.mock.invocationCallOrder[0]).toBeLessThan(
+         fetchSpy.mock.invocationCallOrder[1]
+      )
+   })
+
    test('getLatestHelmVersion() - return the stable version of HELM when every attempt fails', async () => {
       const errorMessage: string = 'Network Error'
       const fetchSpy = vi
