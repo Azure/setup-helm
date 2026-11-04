@@ -66,6 +66,7 @@ describe('run.ts', () => {
    // Cleanup mocks after each test to ensure that subsequent tests are not affected by the mocks.
    afterEach(() => {
       vi.restoreAllMocks()
+      vi.useRealTimers()
    })
 
    test('getExecutableExtension() - return .exe when os is Windows', () => {
@@ -168,21 +169,85 @@ describe('run.ts', () => {
       ).toBe(expected)
    })
 
-   test('getLatestHelmVersion() - return the latest version of HELM', async () => {
-      const res = {
+   const latestVersionResponse = (version: string) =>
+      ({
+         ok: true,
          status: 200,
-         text: async () => 'v9.99.999'
-      } as Response
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(res)
+         text: async () => version
+      }) as Response
+
+   // Runs a getLatestHelmVersion() call under fake timers so the retry
+   // backoff does not slow the test down.
+   const getLatestHelmVersionWithoutDelay = async (
+      fallbackToDefault?: boolean
+   ) => {
+      vi.useFakeTimers()
+      const pending = run.getLatestHelmVersion(fallbackToDefault)
+      // Attach a no-op handler so a rejection is not reported as unhandled
+      // while the timers are being advanced; the caller still awaits it.
+      pending.catch(() => {})
+      await vi.runAllTimersAsync()
+      return pending
+   }
+
+   test('getLatestHelmVersion() - return the latest version of HELM', async () => {
+      const fetchSpy = vi
+         .spyOn(globalThis, 'fetch')
+         .mockResolvedValue(latestVersionResponse('v9.99.999'))
       expect(await run.getLatestHelmVersion()).toBe('v9.99.999')
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
    })
 
-   test('getLatestHelmVersion() - return the stable version of HELM when simulating a network error', async () => {
-      const errorMessage: string = 'Network Error'
-      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(
-         new Error(errorMessage)
+   test('getLatestHelmVersion() - retry a transient failure and return the latest version', async () => {
+      const fetchSpy = vi
+         .spyOn(globalThis, 'fetch')
+         .mockRejectedValueOnce(new Error('Network Error'))
+         .mockResolvedValueOnce({ok: false, status: 503} as Response)
+         .mockResolvedValueOnce(latestVersionResponse('v9.99.999'))
+      expect(await getLatestHelmVersionWithoutDelay()).toBe('v9.99.999')
+      expect(fetchSpy).toHaveBeenCalledTimes(3)
+      expect(core.warning).not.toHaveBeenCalled()
+   })
+
+   test('getLatestHelmVersion() - cancel the unread body of a non-success response before retrying', async () => {
+      const cancel = vi.fn()
+      const fetchSpy = vi
+         .spyOn(globalThis, 'fetch')
+         .mockResolvedValueOnce(
+            new Response(new ReadableStream({cancel}), {status: 503})
+         )
+         .mockResolvedValueOnce(latestVersionResponse('v9.99.999'))
+      expect(await getLatestHelmVersionWithoutDelay()).toBe('v9.99.999')
+      expect(cancel).toHaveBeenCalledTimes(1)
+      expect(cancel.mock.invocationCallOrder[0]).toBeLessThan(
+         fetchSpy.mock.invocationCallOrder[1]
       )
-      expect(await run.getLatestHelmVersion()).toBe(run.stableHelmVersion)
+   })
+
+   test('getLatestHelmVersion() - return the stable version of HELM when every attempt fails', async () => {
+      const errorMessage: string = 'Network Error'
+      const fetchSpy = vi
+         .spyOn(globalThis, 'fetch')
+         .mockRejectedValue(new Error(errorMessage))
+      expect(await getLatestHelmVersionWithoutDelay()).toBe(
+         run.stableHelmVersion
+      )
+      expect(fetchSpy).toHaveBeenCalledTimes(3)
+      expect(core.warning).toHaveBeenCalledWith(
+         expect.stringContaining(errorMessage)
+      )
+   })
+
+   test('getLatestHelmVersion() - throw when every attempt fails and the fallback is off', async () => {
+      const errorMessage: string = 'Network Error'
+      const fetchSpy = vi
+         .spyOn(globalThis, 'fetch')
+         .mockRejectedValue(new Error(errorMessage))
+      await expect(getLatestHelmVersionWithoutDelay(false)).rejects.toThrow(
+         `Unable to determine the latest Helm version: ${errorMessage}`
+      )
+      expect(fetchSpy).toHaveBeenCalledTimes(3)
+      expect(core.warning).not.toHaveBeenCalled()
    })
 
    test('getValidVersion() - return version with v prepended', () => {
@@ -299,11 +364,16 @@ describe('run.ts', () => {
       } as fs.Stats)
    }
 
-   const inputs = (version: string, versionFile: string) =>
+   const inputs = (
+      version: string,
+      versionFile: string,
+      latestFallback: string = ''
+   ) =>
       vi.mocked(core.getInput).mockImplementation((name: string) => {
          if (name === 'version') return version
          if (name === 'version-file') return versionFile
          if (name === 'downloadBaseURL') return downloadBaseURL
+         if (name === 'latest-fallback') return latestFallback
          return ''
       })
 
@@ -514,6 +584,42 @@ describe('run.ts', () => {
       await expect(
          run.resolveLatestPatchVersion(downloadBaseURL, '3.14')
       ).rejects.toThrow('exceeded 100 probes')
+   })
+
+   test('run() - fail when latest cannot be determined and latest-fallback is false', async () => {
+      stubDownloadChain()
+      inputs('latest', '', 'false')
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+         new Error('Network Error')
+      )
+      vi.useFakeTimers()
+
+      const pending = run.run()
+      pending.catch(() => {})
+      await vi.runAllTimersAsync()
+      await expect(pending).rejects.toThrow(
+         'Unable to determine the latest Helm version: Network Error'
+      )
+
+      expect(toolCache.find).not.toHaveBeenCalled()
+   })
+
+   test('run() - install the default version when latest cannot be determined and latest-fallback is left at its default', async () => {
+      stubDownloadChain()
+      inputs('latest', '')
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+         new Error('Network Error')
+      )
+      vi.useFakeTimers()
+
+      const pending = run.run()
+      await vi.runAllTimersAsync()
+      await pending
+
+      expect(core.warning).toHaveBeenCalledWith(
+         expect.stringContaining(run.stableHelmVersion)
+      )
+      expect(toolCache.find).toHaveBeenCalledWith('helm', run.stableHelmVersion)
    })
 
    test('run() - resolve the latest patch for a major.minor version input', async () => {
