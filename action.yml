@@ -18,9 +18,9 @@ inputs:
       required: false
       default: 'https://get.helm.sh'
    latest-fallback:
-      description: "When 'version' is 'latest' and the latest version cannot be determined after retrying, install the built-in default version instead of failing. Off by default, because the built-in default can be a major version behind what 'latest' resolves to."
+      description: "When 'version' is 'latest' and the latest version cannot be determined after retrying, install the built-in default version instead of failing. Set to 'false' to fail the step instead, since the built-in default can be a major version behind what 'latest' resolves to."
       required: false
-      default: 'false'
+      default: 'true'
 outputs:
    helm-path:
       description: 'Path to the cached helm binary'

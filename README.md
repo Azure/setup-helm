@@ -31,13 +31,13 @@ helm 3.18.4
 If both `version` and `version-file` are set, an explicitly requested `version` takes precedence and `version-file` is ignored (a warning is emitted). Because `version` defaults to `latest`, `version-file` is only ignored when you set `version` to a specific value other than `latest`; if `version` is left at its default, the version from `version-file` is used.
 
 > [!NOTE]
-> If fetching the latest version fails, the action retries a few times and then fails the step with the underlying error. It does not install the hardcoded default version (currently v3.18.4), because that default can be a major version behind what `latest` resolves to. To install the default version instead of failing, set `latest-fallback` to `'true'`:
+> If fetching the latest version fails, the action retries a few times and then uses the hardcoded default version (currently v3.18.4). That default can be a major version behind what `latest` resolves to. To fail the step with the underlying error instead, set `latest-fallback` to `'false'`:
 >
 > ```yaml
 > - uses: azure/setup-helm@v5
 >   with:
 >      version: 'latest'
->      latest-fallback: 'true'
+>      latest-fallback: 'false'
 > ```
 >
 > If you rely on a certain version, you should explicitly request that version instead of `latest`.
