@@ -42,9 +42,11 @@ If both `version` and `version-file` are set, an explicitly requested `version` 
 >
 > If you rely on a certain version, you should explicitly request that version instead of `latest`.
 
-Downloaded Helm archives are verified against the SHA-256 checksum published beside the archive before extraction. Custom download mirrors must provide the matching checksum at `<archive-url>.sha256`.
+Freshly downloaded Helm archives are verified against the SHA-256 checksum published beside the archive before extraction. Custom download mirrors must provide the matching checksum as a bare 64-character hexadecimal digest at `<archive-url>.sha256`. Existing tool-cache entries continue to be reused without downloading or re-verifying the archive.
 
-An optional fallback mirror can be used when the archive or checksum cannot be downloaded or verified from the primary location:
+Because each checksum is retrieved from the same mirror as its archive, verification detects corruption or an incomplete mirror sync; it does not protect against a mirror that has been compromised together with its checksum files.
+
+An optional fallback mirror can be used when version resolution, archive download, or checksum verification fails against the primary location:
 
 ```yaml
 - uses: azure/setup-helm@v5

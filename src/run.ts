@@ -44,7 +44,20 @@ export async function run() {
          core.getInput('latest-fallback').toLowerCase() !== 'false'
       version = await getLatestHelmVersion(fallbackToDefault)
    } else if (isMajorMinorShaped(version)) {
-      version = await resolveLatestPatchVersion(downloadBaseURL, version)
+      try {
+         version = await resolveLatestPatchVersion(downloadBaseURL, version)
+      } catch (error) {
+         if (!downloadBaseURLFallback) {
+            throw error
+         }
+         core.warning(
+            `Unable to resolve the latest Helm patch from '${downloadBaseURL}': ${error instanceof Error ? error.message : String(error)}. Trying fallback '${downloadBaseURLFallback}'`
+         )
+         version = await resolveLatestPatchVersion(
+            downloadBaseURLFallback,
+            version
+         )
+      }
       core.info(`Resolved latest patch Helm version to '${version}'`)
    } else if (version[0] !== 'v') {
       version = getValidVersion(version)
@@ -349,7 +362,6 @@ export async function downloadAndVerifyHelm(
    version: string
 ): Promise<string> {
    const downloadURL = getHelmDownloadURL(baseURL, version)
-   const archivePath = await toolCache.downloadTool(downloadURL)
    const checksumPath = await toolCache.downloadTool(`${downloadURL}.sha256`)
    const checksum = fs.readFileSync(checksumPath, 'utf8').trim()
 
@@ -357,9 +369,15 @@ export async function downloadAndVerifyHelm(
       throw new Error(`Invalid SHA-256 checksum from ${downloadURL}.sha256`)
    }
 
-   const actual = createHash('sha256')
-      .update(fs.readFileSync(archivePath))
-      .digest('hex')
+   const archivePath = await toolCache.downloadTool(downloadURL)
+   const hash = createHash('sha256')
+   await new Promise<void>((resolve, reject) => {
+      const archive = fs.createReadStream(archivePath)
+      archive.on('data', (chunk) => hash.update(chunk))
+      archive.on('error', reject)
+      archive.on('end', resolve)
+   })
+   const actual = hash.digest('hex')
    if (actual.toLowerCase() !== checksum.toLowerCase()) {
       throw new Error(`SHA-256 checksum mismatch for ${downloadURL}`)
    }

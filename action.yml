@@ -18,7 +18,7 @@ inputs:
       required: false
       default: 'https://get.helm.sh'
    downloadBaseURLFallback:
-      description: 'Fallback base URL used when the archive or checksum cannot be downloaded or verified from downloadBaseURL'
+      description: 'Fallback base URL used when version resolution, download, or checksum verification fails against downloadBaseURL'
       required: false
       default: ''
    latest-fallback:

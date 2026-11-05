@@ -1,6 +1,7 @@
 import {vi, describe, test, expect, afterEach} from 'vitest'
 import * as path from 'path'
 import {createHash} from 'crypto'
+import {Readable} from 'stream'
 
 // Mock os module
 vi.mock('os', async (importOriginal) => {
@@ -21,6 +22,7 @@ vi.mock('fs', async (importOriginal) => {
       statSync: vi.fn(),
       chmodSync: vi.fn(),
       readFileSync: vi.fn(),
+      createReadStream: vi.fn(),
       existsSync: vi.fn()
    }
 })
@@ -68,10 +70,11 @@ describe('run.ts', () => {
 
    const mockVerifiedDownload = () => {
       vi.mocked(toolCache.downloadTool)
-         .mockResolvedValueOnce('pathToTool')
          .mockResolvedValueOnce('pathToChecksum')
-      vi.mocked(fs.readFileSync).mockImplementation((file) =>
-         file === 'pathToChecksum' ? archiveChecksum : archive
+         .mockResolvedValueOnce('pathToTool')
+      vi.mocked(fs.readFileSync).mockReturnValue(archiveChecksum)
+      vi.mocked(fs.createReadStream).mockReturnValue(
+         Readable.from([archive]) as fs.ReadStream
       )
    }
 
@@ -377,12 +380,14 @@ describe('run.ts', () => {
    const inputs = (
       version: string,
       versionFile: string,
-      latestFallback: string = ''
+      latestFallback: string = '',
+      downloadFallback: string = ''
    ) =>
       vi.mocked(core.getInput).mockImplementation((name: string) => {
          if (name === 'version') return version
          if (name === 'version-file') return versionFile
          if (name === 'downloadBaseURL') return downloadBaseURL
+         if (name === 'downloadBaseURLFallback') return downloadFallback
          if (name === 'latest-fallback') return latestFallback
          return ''
       })
@@ -642,6 +647,29 @@ describe('run.ts', () => {
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.4')
    })
 
+   test('run() - resolve a major.minor version from the fallback mirror', async () => {
+      stubDownloadChain()
+      inputs('3.14', '', '', 'https://fallback.tld')
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+         const url = String(input)
+         if (url.startsWith(downloadBaseURL)) {
+            throw new Error('Primary unavailable')
+         }
+         return {
+            ok: true,
+            text: async () =>
+               '<EnumerationResults><Blob><Name>helm-v3.14.4-linux-amd64.tar.gz</Name></Blob></EnumerationResults>'
+         } as Response
+      })
+
+      await run.run()
+
+      expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.14.4')
+      expect(core.warning).toHaveBeenCalledWith(
+         expect.stringContaining("Trying fallback 'https://fallback.tld'")
+      )
+   })
+
    test('run() - resolve the latest patch for a wildcard patch version input', async () => {
       stubDownloadChain()
       inputs('v3.12.x', '')
@@ -788,11 +816,11 @@ describe('run.ts', () => {
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v4.0.0')
       expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
          1,
-         'https://test.tld/helm-v4.0.0-windows-amd64.zip'
+         'https://test.tld/helm-v4.0.0-windows-amd64.zip.sha256'
       )
       expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
          2,
-         'https://test.tld/helm-v4.0.0-windows-amd64.zip.sha256'
+         'https://test.tld/helm-v4.0.0-windows-amd64.zip'
       )
       expect(fs.chmodSync).toHaveBeenCalledWith('pathToTool', '755')
       expect(toolCache.extractZip).toHaveBeenCalledWith('pathToTool')
@@ -815,7 +843,9 @@ describe('run.ts', () => {
          `Failed to download and verify Helm from location ${downloadUrl}`
       )
       expect(toolCache.find).toHaveBeenCalledWith('helm', 'v3.2.1')
-      expect(toolCache.downloadTool).toHaveBeenCalledWith(`${downloadUrl}`)
+      expect(toolCache.downloadTool).toHaveBeenCalledWith(
+         `${downloadUrl}.sha256`
+      )
    })
 
    test('downloadHelm() - return path to helm tool with same version from toolCache', async () => {
@@ -875,10 +905,11 @@ describe('run.ts', () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
       vi.mocked(toolCache.downloadTool)
-         .mockResolvedValueOnce('pathToTool')
          .mockResolvedValueOnce('pathToChecksum')
-      vi.mocked(fs.readFileSync).mockImplementation((file) =>
-         file === 'pathToChecksum' ? '0'.repeat(64) : archive
+         .mockResolvedValueOnce('pathToTool')
+      vi.mocked(fs.readFileSync).mockReturnValue('0'.repeat(64))
+      vi.mocked(fs.createReadStream).mockReturnValue(
+         Readable.from([archive]) as fs.ReadStream
       )
 
       await expect(
@@ -889,12 +920,8 @@ describe('run.ts', () => {
    test('downloadAndVerifyHelm() - reject an invalid checksum file', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
-      vi.mocked(toolCache.downloadTool)
-         .mockResolvedValueOnce('pathToTool')
-         .mockResolvedValueOnce('pathToChecksum')
-      vi.mocked(fs.readFileSync).mockImplementation((file) =>
-         file === 'pathToChecksum' ? 'not-a-checksum' : archive
-      )
+      vi.mocked(toolCache.downloadTool).mockResolvedValueOnce('pathToChecksum')
+      vi.mocked(fs.readFileSync).mockReturnValue('not-a-checksum')
 
       await expect(
          run.downloadAndVerifyHelm(downloadBaseURL, 'v3.18.4')
@@ -906,15 +933,16 @@ describe('run.ts', () => {
       vi.mocked(os.platform).mockReturnValue('win32')
       vi.mocked(os.arch).mockReturnValue('x64')
       vi.mocked(toolCache.downloadTool)
-         .mockResolvedValueOnce('primaryTool')
          .mockResolvedValueOnce('primaryChecksum')
-         .mockResolvedValueOnce('fallbackTool')
+         .mockResolvedValueOnce('primaryTool')
          .mockResolvedValueOnce('fallbackChecksum')
-      vi.mocked(fs.readFileSync).mockImplementation((file) => {
-         if (file === 'primaryChecksum') return '0'.repeat(64)
-         if (file === 'fallbackChecksum') return archiveChecksum
-         return archive
-      })
+         .mockResolvedValueOnce('fallbackTool')
+      vi.mocked(fs.readFileSync).mockImplementation((file) =>
+         file === 'primaryChecksum' ? '0'.repeat(64) : archiveChecksum
+      )
+      vi.mocked(fs.createReadStream).mockImplementation(
+         () => Readable.from([archive]) as fs.ReadStream
+      )
       vi.mocked(fs.chmodSync).mockImplementation(() => {})
       vi.mocked(toolCache.extractZip).mockResolvedValue('extractedPath')
       vi.mocked(toolCache.cacheDir).mockResolvedValue('pathToCachedDir')
@@ -934,11 +962,11 @@ describe('run.ts', () => {
       ).toBe(path.join('pathToCachedDir', 'helm.exe'))
       expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
          3,
-         'https://fallback.tld/helm-v3.18.4-windows-amd64.zip'
+         'https://fallback.tld/helm-v3.18.4-windows-amd64.zip.sha256'
       )
       expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
          4,
-         'https://fallback.tld/helm-v3.18.4-windows-amd64.zip.sha256'
+         'https://fallback.tld/helm-v3.18.4-windows-amd64.zip'
       )
       expect(toolCache.extractZip).toHaveBeenCalledWith('fallbackTool')
       expect(core.warning).toHaveBeenCalledWith(
@@ -951,12 +979,13 @@ describe('run.ts', () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
       vi.mocked(toolCache.downloadTool)
-         .mockResolvedValueOnce('primaryTool')
          .mockResolvedValueOnce('primaryChecksum')
-         .mockResolvedValueOnce('fallbackTool')
+         .mockResolvedValueOnce('primaryTool')
          .mockResolvedValueOnce('fallbackChecksum')
-      vi.mocked(fs.readFileSync).mockImplementation((file) =>
-         String(file).endsWith('Checksum') ? '0'.repeat(64) : archive
+         .mockResolvedValueOnce('fallbackTool')
+      vi.mocked(fs.readFileSync).mockReturnValue('0'.repeat(64))
+      vi.mocked(fs.createReadStream).mockImplementation(
+         () => Readable.from([archive]) as fs.ReadStream
       )
 
       await expect(
