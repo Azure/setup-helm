@@ -51,7 +51,7 @@ An optional fallback mirror can be used when version resolution, archive downloa
 ```yaml
 - uses: azure/setup-helm@v5
   with:
-     version: 'v3.18.4'
+     version: 'v4.3.1'
      downloadBaseURL: 'https://primary.example/helm'
      downloadBaseURLFallback: 'https://fallback.example/helm'
 ```
