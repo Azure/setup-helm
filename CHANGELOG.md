@@ -1,5 +1,31 @@
 # Change Log
 
+## [5.1.0] - 2026-11-09
+
+### Added
+
+- #281 [Read the Helm version from a .tool-versions file with the version-file input](https://github.com/Azure/setup-helm/pull/281)
+- #293 [Resolve the latest patch for a major.minor version](https://github.com/Azure/setup-helm/pull/293)
+- #315 [Add configurable checksum verification and fallback download mirrors](https://github.com/Azure/setup-helm/pull/315)
+
+### Fixed
+
+- #292 [Preserve subpath base URLs when constructing Helm download URLs](https://github.com/Azure/setup-helm/pull/292)
+- #303 [Retry latest-version lookups and add the latest-fallback opt-out](https://github.com/Azure/setup-helm/pull/303)
+
+### Security
+
+- #313 [Update Undici security fixes](https://github.com/Azure/setup-helm/pull/313)
+- #307 [Update Undici](https://github.com/Azure/setup-helm/pull/307)
+- #298 [Update Undici](https://github.com/Azure/setup-helm/pull/298)
+
+### Changed
+
+- #314 [Update the built-in Helm fallback from v3.18.4 to v4.3.1](https://github.com/Azure/setup-helm/pull/314)
+- #311 [Enable stale cleanup after 74 inactive days](https://github.com/Azure/setup-helm/pull/311)
+- #306 [Update the shared release workflow](https://github.com/Azure/setup-helm/pull/306)
+- Update remaining dependency groups, development tools, and workflow actions (#290, #291, #294, #295, #297, #299, #301, #305, #308, #309, #316)
+
 ## [5.0.1] - 2026-06-23
 
 ### Fixed
