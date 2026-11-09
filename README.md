@@ -42,13 +42,13 @@ If both `version` and `version-file` are set, an explicitly requested `version` 
 >
 > If you rely on a certain version, you should explicitly request that version instead of `latest`.
 
-Freshly downloaded Helm archives from the default `get.helm.sh` endpoint are verified against the SHA-256 checksum published beside the archive before extraction. With the default `checksum-policy: auto`, custom mirrors are also verified when they provide a matching checksum as a bare 64-character hexadecimal digest at `<archive-url>.sha256`; when the checksum is not found, the action warns and continues downloading from the custom mirror. Existing tool-cache entries continue to be reused without downloading or re-verifying the archive.
+Freshly downloaded Helm archives are verified against the SHA-256 checksum published beside the archive before extraction. With the default `checksum-policy: auto`, the action verifies a matching checksum when one is available as a bare 64-character hexadecimal digest at `<archive-url>.sha256`; when the checksum is not found, the action warns and continues downloading. Existing tool-cache entries continue to be reused without downloading or re-verifying the archive.
 
 Set `checksum-policy` to control this behavior:
 
-- `auto` (default): require checksums from `get.helm.sh`; verify custom mirror checksums when available and warn when they are absent.
+- `auto` (default): verify checksums when available and warn when they are absent.
 - `required`: require a valid matching checksum from every download location.
-- `if-available`: verify checksums when available and warn when they are absent.
+- `if-available`: explicitly select the same verify-or-warn behavior as `auto`.
 - `disabled`: skip checksum verification and emit a warning.
 
 Malformed or mismatched checksums always fail unless verification is explicitly `disabled`. In `if-available` and `auto` modes, only a checksum response of HTTP 404 or 410 is treated as absent; other download errors fail closed.

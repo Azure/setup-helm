@@ -22,7 +22,7 @@ inputs:
       required: false
       default: ''
    checksum-policy:
-      description: "Checksum verification policy: 'auto' requires checksums for get.helm.sh and uses them when available for custom mirrors; 'required' always requires them; 'if-available' verifies them when present; 'disabled' skips verification"
+      description: "Checksum verification policy: 'auto' verifies checksums when available and warns when absent; 'required' always requires them; 'if-available' is an explicit alias for auto behavior; 'disabled' skips verification"
       required: false
       default: 'auto'
    latest-fallback:

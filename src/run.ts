@@ -12,7 +12,6 @@ import * as core from '@actions/core'
 
 const helmToolName = 'helm'
 export const stableHelmVersion = 'v4.3.1'
-const defaultDownloadBaseURL = 'https://get.helm.sh'
 
 export type ChecksumPolicy = 'auto' | 'required' | 'if-available' | 'disabled'
 
@@ -385,7 +384,7 @@ export async function downloadAndVerifyHelm(
    policy: ChecksumPolicy = 'auto'
 ): Promise<string> {
    const downloadURL = getHelmDownloadURL(baseURL, version)
-   const effectivePolicy = resolveChecksumPolicy(baseURL, policy)
+   const effectivePolicy = resolveChecksumPolicy(policy)
 
    if (effectivePolicy === 'disabled') {
       core.warning(
@@ -432,24 +431,9 @@ export async function downloadAndVerifyHelm(
 }
 
 export function resolveChecksumPolicy(
-   baseURL: string,
    policy: ChecksumPolicy
 ): Exclude<ChecksumPolicy, 'auto'> {
-   if (policy !== 'auto') {
-      return policy
-   }
-
-   try {
-      const base = new URL(baseURL)
-      const defaultBase = new URL(defaultDownloadBaseURL)
-      const pathname = base.pathname.replace(/\/+$/, '') || '/'
-      const defaultPathname = defaultBase.pathname.replace(/\/+$/, '') || '/'
-      return base.origin === defaultBase.origin && pathname === defaultPathname
-         ? 'required'
-         : 'if-available'
-   } catch {
-      return 'if-available'
-   }
+   return policy === 'auto' ? 'if-available' : policy
 }
 
 function isChecksumNotFoundError(error: unknown): boolean {

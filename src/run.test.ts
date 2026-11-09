@@ -106,19 +106,9 @@ describe('run.ts', () => {
       )
    })
 
-   test('resolveChecksumPolicy() - require default endpoint checksums in auto mode', () => {
-      expect(run.resolveChecksumPolicy('https://get.helm.sh', 'auto')).toBe(
-         'required'
-      )
-      expect(run.resolveChecksumPolicy('https://get.helm.sh/', 'auto')).toBe(
-         'required'
-      )
-      expect(
-         run.resolveChecksumPolicy('https://mirror.example/helm', 'auto')
-      ).toBe('if-available')
-      expect(
-         run.resolveChecksumPolicy('https://mirror.example/helm', 'required')
-      ).toBe('required')
+   test('resolveChecksumPolicy() - auto verifies checksums when available', () => {
+      expect(run.resolveChecksumPolicy('auto')).toBe('if-available')
+      expect(run.resolveChecksumPolicy('required')).toBe('required')
    })
 
    test('getHelmDownloadURL() - return the URL to download helm for Linux amd64', () => {
@@ -974,7 +964,23 @@ describe('run.ts', () => {
       )
    })
 
-   test('downloadAndVerifyHelm() - auto mode requires a checksum from get.helm.sh', async () => {
+   test('downloadAndVerifyHelm() - auto mode warns when get.helm.sh has no checksum', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(toolCache.downloadTool)
+         .mockRejectedValueOnce(new toolCache.HTTPError(404))
+         .mockResolvedValueOnce('pathToTool')
+
+      await expect(
+         run.downloadAndVerifyHelm('https://get.helm.sh', 'v3.18.4')
+      ).resolves.toBe('pathToTool')
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(2)
+      expect(core.warning).toHaveBeenCalledWith(
+         expect.stringContaining('continuing without verification')
+      )
+   })
+
+   test('downloadAndVerifyHelm() - required mode blocks a missing checksum', async () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
       vi.mocked(toolCache.downloadTool).mockRejectedValueOnce(
@@ -982,7 +988,7 @@ describe('run.ts', () => {
       )
 
       await expect(
-         run.downloadAndVerifyHelm('https://get.helm.sh', 'v3.18.4')
+         run.downloadAndVerifyHelm(downloadBaseURL, 'v3.18.4', 'required')
       ).rejects.toThrow('Unexpected HTTP response: 404')
       expect(toolCache.downloadTool).toHaveBeenCalledTimes(1)
       expect(core.warning).not.toHaveBeenCalled()
