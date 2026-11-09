@@ -21,6 +21,10 @@ inputs:
       description: 'Fallback base URL used when version resolution, download, or checksum verification fails against downloadBaseURL'
       required: false
       default: ''
+   checksum-policy:
+      description: "Checksum verification policy: 'auto' requires checksums for get.helm.sh and uses them when available for custom mirrors; 'required' always requires them; 'if-available' verifies them when present; 'disabled' skips verification"
+      required: false
+      default: 'auto'
    latest-fallback:
       description: "When 'version' is 'latest' and the latest version cannot be determined after retrying, install the built-in default version instead of failing. Set to 'false' to fail the step instead, since the built-in default can be a major version behind what 'latest' resolves to."
       required: false

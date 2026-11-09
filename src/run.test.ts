@@ -98,6 +98,29 @@ describe('run.ts', () => {
       expect(os.platform).toHaveBeenCalled()
    })
 
+   test('getChecksumPolicy() - default to auto and reject invalid values', () => {
+      expect(run.getChecksumPolicy('')).toBe('auto')
+      expect(run.getChecksumPolicy(' REQUIRED ')).toBe('required')
+      expect(() => run.getChecksumPolicy('warn')).toThrow(
+         "Invalid checksum-policy 'warn'"
+      )
+   })
+
+   test('resolveChecksumPolicy() - require default endpoint checksums in auto mode', () => {
+      expect(run.resolveChecksumPolicy('https://get.helm.sh', 'auto')).toBe(
+         'required'
+      )
+      expect(run.resolveChecksumPolicy('https://get.helm.sh/', 'auto')).toBe(
+         'required'
+      )
+      expect(
+         run.resolveChecksumPolicy('https://mirror.example/helm', 'auto')
+      ).toBe('if-available')
+      expect(
+         run.resolveChecksumPolicy('https://mirror.example/helm', 'required')
+      ).toBe('required')
+   })
+
    test('getHelmDownloadURL() - return the URL to download helm for Linux amd64', () => {
       vi.mocked(os.platform).mockReturnValue('linux')
       vi.mocked(os.arch).mockReturnValue('x64')
@@ -926,6 +949,73 @@ describe('run.ts', () => {
       await expect(
          run.downloadAndVerifyHelm(downloadBaseURL, 'v3.18.4')
       ).rejects.toThrow('Invalid SHA-256 checksum')
+   })
+
+   test('downloadAndVerifyHelm() - auto mode warns and continues when a custom mirror has no checksum', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(toolCache.downloadTool)
+         .mockRejectedValueOnce(new toolCache.HTTPError(404))
+         .mockResolvedValueOnce('pathToTool')
+
+      await expect(
+         run.downloadAndVerifyHelm(downloadBaseURL, 'v3.18.4')
+      ).resolves.toBe('pathToTool')
+      expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
+         1,
+         'https://test.tld/helm-v3.18.4-linux-amd64.tar.gz.sha256'
+      )
+      expect(toolCache.downloadTool).toHaveBeenNthCalledWith(
+         2,
+         'https://test.tld/helm-v3.18.4-linux-amd64.tar.gz'
+      )
+      expect(core.warning).toHaveBeenCalledWith(
+         expect.stringContaining('continuing without verification')
+      )
+   })
+
+   test('downloadAndVerifyHelm() - auto mode requires a checksum from get.helm.sh', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(toolCache.downloadTool).mockRejectedValueOnce(
+         new toolCache.HTTPError(404)
+      )
+
+      await expect(
+         run.downloadAndVerifyHelm('https://get.helm.sh', 'v3.18.4')
+      ).rejects.toThrow('Unexpected HTTP response: 404')
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(1)
+      expect(core.warning).not.toHaveBeenCalled()
+   })
+
+   test('downloadAndVerifyHelm() - if-available mode does not ignore checksum server errors', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(toolCache.downloadTool).mockRejectedValueOnce(
+         new toolCache.HTTPError(503)
+      )
+
+      await expect(
+         run.downloadAndVerifyHelm(downloadBaseURL, 'v3.18.4', 'if-available')
+      ).rejects.toThrow('Unexpected HTTP response: 503')
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(1)
+   })
+
+   test('downloadAndVerifyHelm() - disabled mode downloads without requesting a checksum', async () => {
+      vi.mocked(os.platform).mockReturnValue('linux')
+      vi.mocked(os.arch).mockReturnValue('x64')
+      vi.mocked(toolCache.downloadTool).mockResolvedValueOnce('pathToTool')
+
+      await expect(
+         run.downloadAndVerifyHelm(downloadBaseURL, 'v3.18.4', 'disabled')
+      ).resolves.toBe('pathToTool')
+      expect(toolCache.downloadTool).toHaveBeenCalledWith(
+         'https://test.tld/helm-v3.18.4-linux-amd64.tar.gz'
+      )
+      expect(toolCache.downloadTool).toHaveBeenCalledTimes(1)
+      expect(core.warning).toHaveBeenCalledWith(
+         expect.stringContaining('Checksum verification is disabled')
+      )
    })
 
    test('downloadHelm() - use a verified fallback after a primary checksum mismatch', async () => {

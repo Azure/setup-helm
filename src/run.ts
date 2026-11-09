@@ -12,6 +12,9 @@ import * as core from '@actions/core'
 
 const helmToolName = 'helm'
 export const stableHelmVersion = 'v4.3.1'
+const defaultDownloadBaseURL = 'https://get.helm.sh'
+
+export type ChecksumPolicy = 'auto' | 'required' | 'if-available' | 'disabled'
 
 export async function run() {
    let version = core.getInput('version')
@@ -36,6 +39,9 @@ export async function run() {
    const downloadBaseURLFallback = core.getInput('downloadBaseURLFallback', {
       required: false
    })
+   const checksumPolicy = getChecksumPolicy(
+      core.getInput('checksum-policy', {required: false})
+   )
 
    if (version.toLocaleLowerCase() === 'latest') {
       // Only an explicit 'false' turns the fallback off, matching the
@@ -68,7 +74,8 @@ export async function run() {
    const cachedPath = await downloadHelm(
       downloadBaseURL,
       version,
-      downloadBaseURLFallback
+      downloadBaseURLFallback,
+      checksumPolicy
    )
    core.endGroup()
 
@@ -87,6 +94,21 @@ export async function run() {
 // Prefixes version with v
 export function getValidVersion(version: string): string {
    return 'v' + version
+}
+
+export function getChecksumPolicy(value: string): ChecksumPolicy {
+   const policy = value.trim().toLowerCase() || 'auto'
+   if (
+      policy !== 'auto' &&
+      policy !== 'required' &&
+      policy !== 'if-available' &&
+      policy !== 'disabled'
+   ) {
+      throw new Error(
+         `Invalid checksum-policy '${value}'. Expected auto, required, if-available, or disabled`
+      )
+   }
+   return policy
 }
 
 // Matches a complete semantic version (major.minor.patch with optional
@@ -359,11 +381,35 @@ export function getHelmDownloadURL(baseURL: string, version: string): string {
 
 export async function downloadAndVerifyHelm(
    baseURL: string,
-   version: string
+   version: string,
+   policy: ChecksumPolicy = 'auto'
 ): Promise<string> {
    const downloadURL = getHelmDownloadURL(baseURL, version)
-   const checksumPath = await toolCache.downloadTool(`${downloadURL}.sha256`)
-   const checksum = fs.readFileSync(checksumPath, 'utf8').trim()
+   const effectivePolicy = resolveChecksumPolicy(baseURL, policy)
+
+   if (effectivePolicy === 'disabled') {
+      core.warning(
+         `Checksum verification is disabled for Helm downloads from '${baseURL}'`
+      )
+      return toolCache.downloadTool(downloadURL)
+   }
+
+   let checksum: string | undefined
+   try {
+      const checksumPath = await toolCache.downloadTool(`${downloadURL}.sha256`)
+      checksum = fs.readFileSync(checksumPath, 'utf8').trim()
+   } catch (error) {
+      if (
+         effectivePolicy === 'if-available' &&
+         isChecksumNotFoundError(error)
+      ) {
+         core.warning(
+            `No SHA-256 checksum is available for ${downloadURL}; continuing without verification. Set checksum-policy to 'required' to fail instead.`
+         )
+         return toolCache.downloadTool(downloadURL)
+      }
+      throw error
+   }
 
    if (!/^[a-fA-F0-9]{64}$/.test(checksum)) {
       throw new Error(`Invalid SHA-256 checksum from ${downloadURL}.sha256`)
@@ -385,10 +431,39 @@ export async function downloadAndVerifyHelm(
    return archivePath
 }
 
+export function resolveChecksumPolicy(
+   baseURL: string,
+   policy: ChecksumPolicy
+): Exclude<ChecksumPolicy, 'auto'> {
+   if (policy !== 'auto') {
+      return policy
+   }
+
+   try {
+      const base = new URL(baseURL)
+      const defaultBase = new URL(defaultDownloadBaseURL)
+      const pathname = base.pathname.replace(/\/+$/, '') || '/'
+      const defaultPathname = defaultBase.pathname.replace(/\/+$/, '') || '/'
+      return base.origin === defaultBase.origin && pathname === defaultPathname
+         ? 'required'
+         : 'if-available'
+   } catch {
+      return 'if-available'
+   }
+}
+
+function isChecksumNotFoundError(error: unknown): boolean {
+   return (
+      error instanceof toolCache.HTTPError &&
+      (error.httpStatusCode === 404 || error.httpStatusCode === 410)
+   )
+}
+
 export async function downloadHelm(
    baseURL: string,
    version: string,
-   fallbackBaseURL?: string
+   fallbackBaseURL?: string,
+   checksumPolicy: ChecksumPolicy = 'auto'
 ): Promise<string> {
    let cachedToolpath = toolCache.find(helmToolName, version)
    if (cachedToolpath) {
@@ -397,7 +472,11 @@ export async function downloadHelm(
       core.info(`Downloading '${version}' from '${baseURL}'`)
       let helmDownloadPath
       try {
-         helmDownloadPath = await downloadAndVerifyHelm(baseURL, version)
+         helmDownloadPath = await downloadAndVerifyHelm(
+            baseURL,
+            version,
+            checksumPolicy
+         )
       } catch (error) {
          if (fallbackBaseURL) {
             core.warning(
@@ -406,7 +485,8 @@ export async function downloadHelm(
             try {
                helmDownloadPath = await downloadAndVerifyHelm(
                   fallbackBaseURL,
-                  version
+                  version,
+                  checksumPolicy
                )
             } catch (fallbackError) {
                throw new Error(
